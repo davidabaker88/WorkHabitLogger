@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="google.apis.drive.v2" Version="1.32.2.1163" />
+    <PackageReference Include="Google.Apis.Sheets.v4" Version="1.32.2.1167" />
+    <PackageReference Include="Google.GData.Client" Version="2.2.0" />
+    <PackageReference Include="Google.GData.Spreadsheets" Version="1.6.0" />
+  </ItemGroup>
+
+</Project>
