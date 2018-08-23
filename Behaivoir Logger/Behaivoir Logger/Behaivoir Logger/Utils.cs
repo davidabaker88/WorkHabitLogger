@@ -97,8 +97,13 @@ namespace Behaivoir_Logger
                 Console.WriteLine("An error occurred: " + e.Message);
             }
         }
-        public static void CreateNewSheet(string SheetName)
-        {
+        /// <summary>
+        /// creates a new Google Sheet and returns the ID
+        /// </summary>
+        /// <param name="SheetName"></param>
+        /// <returns></returns>
+        public static String CreateNewSheet(string SheetName)
+        {  
             SheetsService sheetsService = new SheetsService(new BaseClientService.Initializer
             {
                 HttpClientInitializer = GetCredential(),
@@ -115,7 +120,7 @@ namespace Behaivoir_Logger
 
 
             Data.Spreadsheet response = request.Execute();
-            string ok = response.SpreadsheetId;
+            return response.SpreadsheetId;
             //1xt6CqlJgpxW2W8rNZvpT9nVRm--xzyo7dVSNY4qQE5w
 
             // TODO: Change code below to process the `response` object:
@@ -150,7 +155,7 @@ namespace Behaivoir_Logger
             return response.Values;
            
         }
-        public static void WriteData(List<object> cellData, string SheetName, string Column, int StartingCell)
+        public static void WriteData(String spreadSheetID, List<object> cellData, string SheetName, String startCell, String endCell)
         {
             // Create Google Sheets API service.
             var service = new SheetsService(new BaseClientService.Initializer()
@@ -167,13 +172,18 @@ namespace Behaivoir_Logger
             valueRange.Values = new List<IList<object>> { oblist };
 
             // Define request parameters.
-            String spreadsheetId = "160fIGNBuzud5JJ4Cd6cjLiUrVF3looxxw-gd1G3dc_s";
             String range = SheetName + "!" + Column + Convert.ToString(StartingCell) + ":" + Column + Convert.ToString(StartingCell + cellData.Count);
             SpreadsheetsResource.ValuesResource.UpdateRequest request =
-                    service.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
+                    service.Spreadsheets.Values.Update(valueRange, spreadSheetID, range);
             request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
             UpdateValuesResponse result2 = request.Execute();
 
         }
+
+        //create lock cells function
+
+        //create unlock cells function
+
+        //create add Sheet function
     }
 }

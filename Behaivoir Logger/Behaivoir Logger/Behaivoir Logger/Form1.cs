@@ -16,6 +16,7 @@ namespace Behaivoir_Logger
         List<String> studentNameList = new List<String>();
         List<String> userNameList = new List<String>();
         List<EnhancedButton> buttonList = new List<EnhancedButton>();
+        Dictionary<String, Student> studentDictionary= new Dictionary<string, Student>();
         private bool snapMode;
         private bool reportMode;
         private bool amClassMode;
@@ -23,7 +24,7 @@ namespace Behaivoir_Logger
         private string pmConfigSheet;
         private string courseName;
         private string suffix;
-        private String spreadsheetId = "160fIGNBuzud5JJ4Cd6cjLiUrVF3looxxw-gd1G3dc_s"; //fix me
+        private String spreadsheetId = "160fIGNBuzud5JJ4Cd6cjLiUrVF3looxxw-gd1G3dc_s"; //fixme
 
         public Form1()
         {
@@ -31,8 +32,8 @@ namespace Behaivoir_Logger
             //open manage book
             
 
-            courseName = "Programming";//temp for now
-            suffix = "";
+            courseName = "Programming";//temp for now fixme
+            suffix = "_18_19";//temp for now fixme
 
             amConfigSheet = "StudentInfoAM";
             pmConfigSheet = "StudentInfoPM";
@@ -46,6 +47,9 @@ namespace Behaivoir_Logger
 
         private void CreatingNewButtons(string studentCfgFileName)
         {
+            int userNameCol = 1;
+            int displayNameCol = 0;
+            int sheetIDCol = 2;
             //read section from CfgSheet
             IList<IList<Object>> studentConfigData =Utils.GetSpreadData(spreadsheetId, studentCfgFileName, "A1","C30");//fix range
             if (studentConfigData != null && studentConfigData.Count > 0)
@@ -53,6 +57,14 @@ namespace Behaivoir_Logger
                 foreach (var row in studentConfigData)
                 {
                     //create new student and add in information.  Add student to studentDictionary
+                    if (row.Count > 3)
+                    {
+                        studentDictionary.Add((string)row[userNameCol], new Student((string)row[userNameCol], (string)row[displayNameCol], courseName));
+                    }
+                    else
+                    {
+                        studentDictionary.Add((string)row[userNameCol], new Student((string)row[userNameCol], (string)row[displayNameCol], courseName, (string)row[sheetIDCol]));
+                    }
                     foreach (var col in row)
                     {
                         Console.Write(col + ",");
@@ -67,7 +79,8 @@ namespace Behaivoir_Logger
             int horizotal = 30;
             int vertical = 70;
             int rowSize = 7;
-            int seatsLeftAsle = 3;
+            int seatsLeftAisle = 8;
+            int seatsRightAisle = 8;
             //System.Windows.SystemParameters.PrimaryScreenWidth 
             //System.Windows.SystemParameters.PrimaryScreenHeight
 
@@ -77,51 +90,24 @@ namespace Behaivoir_Logger
                 this.Controls.Remove(btnToRemove);
             }
             buttonList.Clear();
-            studentNameList.Clear();
-            userNameList.Clear();
 
-            //read in button information from cfg file
-
-            string line;
-            //read in config file to set up all of the buttons and corresponding data
-            StreamReader inputFile;
-            inputFile = File.OpenText(studentCfgFileName);
-            while (!inputFile.EndOfStream)
+            int i = 0;
+            foreach (String userName in studentDictionary.Keys)
             {
-                line = inputFile.ReadLine();
-                if (line.StartsWith("//"))
-                {
-                    continue;
-                }
-                else
-                {
-                    String[] subStrings = line.Split(',');
-                    studentNameList.Add(subStrings[0]);
-                    if (subStrings.Length >= 2) 
-                    {
-                        userNameList.Add(subStrings[1]); 
-                    }
-                    else
-                    {
-                        userNameList.Add(subStrings[0]);//temp fix to be first inital+lastname
-                    }
-
-                      
-                }
-            }
-            inputFile.Close();
-
-            for (int i = 0; i < studentNameList.Count; i++)
-            {
+                
                 EnhancedButton myButton = new EnhancedButton();
                 myButton.Size = new Size(85, 85);
                 myButton.Location = new Point(horizotal, vertical);
-                myButton.Text = studentNameList[i];
-                myButton.userName = userNameList[i];
+                myButton.Text = studentDictionary[userName].getDisplayName();
+                myButton.userName = userName;
                 myButton.Click += new EventHandler(button_Click);
 
                 horizotal += 90;
-                if ((i % rowSize) == seatsLeftAsle-1)
+                if ((i % rowSize) == seatsLeftAisle-1)
+                {
+                    horizotal += 20;
+                }
+                if ((i % rowSize) == seatsRightAisle - 1)
                 {
                     horizotal += 20;
                 }
@@ -132,6 +118,7 @@ namespace Behaivoir_Logger
                 }
                 this.Controls.Add(myButton);
                 buttonList.Add(myButton);
+                i++;
             }
         }
         
@@ -181,12 +168,14 @@ namespace Behaivoir_Logger
             if (amClassMode)
             {
                 this.Text = courseName+" AM";
+                studentDictionary.Clear();
                 CreatingNewButtons(amConfigSheet);
                 backBtn.Text = "Switch to PM";
             }
             else
             {
                 this.Text = courseName + " PM";
+                studentDictionary.Clear();
                 CreatingNewButtons(pmConfigSheet);
                 backBtn.Text = "Switch to AM";
             }
@@ -228,20 +217,19 @@ namespace Behaivoir_Logger
 
         private void submitBtn_Click(object sender, EventArgs e)
         {
+            //needs to write to google sheet.
             snapMode = false;
             submitBtn.Visible = false;
-            string basePath = "I:/"+courseName+"/";
-            string defaultFolder = "BehaviorLogger/";
-            string baseName = "BehaviorLog"+suffix+".csv";
+
+            
+
+           
             int posNeg;
            
             foreach (EnhancedButton tempBtn in buttonList)
             {
                 if (tempBtn.Text != "")
                 {
-                    string path = basePath + defaultFolder;
-                    string backupPath = basePath + defaultFolder + "backup/";
-                    string filename = baseName;
                     string comments = "";
                     String[] wrkHabitsArray = { "4", "5", "7" };
                     List<int> workHabitsList = new List<int>();
@@ -253,10 +241,8 @@ namespace Behaivoir_Logger
                         {
                             workHabitsList.Add(Int32.Parse(wrkHabit));
                         }
-                        openAndWriteToCSV(tempBtn.Text, path, backupPath, filename, posNeg,comments,workHabitsList);
-                        path = basePath + tempBtn.userName + "/" + defaultFolder;
-                        filename = tempBtn.userName + baseName;
-                        openAndWriteToCSV(tempBtn.Text, path, backupPath, filename, posNeg,comments,workHabitsList);
+                        WriteToCSV(tempBtn.userName, posNeg, comments, workHabitsList);
+                        //WriteData(String spreadSheetID, List<object> cellData, string SheetName, String startCell, String endCell)
 
                     }
                     else if (tempBtn.BackColor == Color.Red || tempBtn.BackColor == Color.Yellow)
@@ -299,10 +285,7 @@ namespace Behaivoir_Logger
                                 workHabitsList.Add(Int32.Parse(wrkHabit));
                             }
                         }
-                        openAndWriteToCSV(tempBtn.Text, path, backupPath, filename, posNeg, comments, workHabitsList);
-                        path = basePath + tempBtn.userName + "/" + defaultFolder;
-                        filename = tempBtn.userName + baseName;
-                        openAndWriteToCSV(tempBtn.Text,  path, backupPath, filename, posNeg, comments, workHabitsList);
+                        WriteToCSV(tempBtn.userName, posNeg, comments, workHabitsList);
                     }
                   
                     tempBtn.BackColor = Color.Transparent;
@@ -310,55 +293,25 @@ namespace Behaivoir_Logger
             }
             snapshotBtn.BackColor = Color.Transparent;
         }
-        private void openAndWriteToCSV(string studentName, string path, string backupPath, string filename, int onTask, string comments, List<int> workHabitsList)
+
+        private void WriteToCSV(string studentName, int onTask, string comments, List<int> workHabitsList)
         {
-            string outfileName = path + filename;
-            string backOutFile = backupPath + filename;
-            Directory.CreateDirectory(path);
-            if (!File.Exists(outfileName))
-            {
-                using (StreamWriter sw = new StreamWriter(outfileName))
-                {
-                    sw.WriteLine("Time,Name,Observation Text,Comments,Attendance,Safety,Care of Work Area,Good Judgement,Effort,Cooperation,Self Discipline,Quality of Work,Quanity of Work,Dress");
-                }
-            }
-            try
-            {
-                if (File.Exists(backOutFile))
-                {
-                    //file is not in use otherwise throws exception
-                    using (StreamWriter sw = File.AppendText(outfileName)) { }
-                    //move file over to local area
-                    File.Copy(backOutFile, outfileName, true);
-                    File.Delete(backOutFile);
-                }
-                using (StreamWriter sw = File.AppendText(outfileName))
-                {
-                    WriteToCSV(studentName, onTask, comments, sw, workHabitsList);
-                }
-            }
-            catch
-            {
-                //File is already open need to write to backup file
-                Directory.CreateDirectory(backupPath);
-                if (!File.Exists(backOutFile))
-                {
-                    File.Copy(outfileName, backOutFile);
-                }
-                using (StreamWriter sw = File.AppendText(backOutFile))
-                {
-                    WriteToCSV(studentName, onTask, comments, sw, workHabitsList);
-                }
-            }
-        }
-        private void WriteToCSV(string studentName, int onTask, string comments, StreamWriter sw, List<int> workHabitsList)
-        {
+            //get last row written
             string[] defaultComments = new string[2];
             defaultComments[0] = "Student was not on task when doing scan of the class";
             defaultComments[1] = "Student was on task when doing scan of the class";
-            //write the information to csv file
+            //write the information to sheet, set up cell data list(date,name,observation,comments,workhabits1-10,countableObservation
+
             string dateTime = DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss");
-            sw.Write(dateTime + "," + studentName + "," + defaultComments[onTask].Replace(",", ";").Replace(System.Environment.NewLine, ".  ") + "," + comments.Replace(",", ";").Replace(System.Environment.NewLine, ".  ") + ",");
+           
+            //write date
+            
+            //write name
+            //write observation
+            //write comments
+
+
+
             //write the information regarding workhabit categories to csv file
             int index = 0;
             for (int i = 1; i <= 10; i++)
@@ -368,11 +321,11 @@ namespace Behaivoir_Logger
                 {
                     if (onTask == 1)
                     {
-                        sw.Write("+");
+                        sw.Write("1");
                     }
                     else
                     {
-                        sw.Write("-");
+                        sw.Write("0");
                     }
                     index++;
                     if (index >= workHabitsList.Count)
@@ -380,9 +333,11 @@ namespace Behaivoir_Logger
                         break;
                     }
                 }
-                sw.Write(",");
+                
             }
-            sw.Write("\n");
+            sw.Write("1"); //write 1 in total observations
+            //write all at once
+            WriteData(spreadsheetId, List<object> cellData, string SheetName, String startCell, String endCell)
         }
 
         private void pullReportBtn_Click(object sender, EventArgs e)
