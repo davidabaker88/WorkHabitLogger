@@ -34,14 +34,14 @@ namespace googlesheetstest
 
         static void Main(string[] args)
         {
-           
+
         }
         static UserCredential GetCredential()
         {
             UserCredential credential;
 
             using (var stream =
-                new FileStream("C:/Users/chartsuff/Downloads/client_id.json", FileMode.Open, FileAccess.Read))
+                new FileStream("C:/Personal/client_secret_699128106834-e5rm37goeq1qmip1n2cdkluomacqb16n.apps.googleusercontent.com.json", FileMode.Open, FileAccess.Read))
             {
                 string credPath = System.Environment.GetFolderPath(
                     System.Environment.SpecialFolder.Personal);
@@ -58,11 +58,13 @@ namespace googlesheetstest
 
             return credential;
         }
-        static List<Google.Apis.Drive.v2.Data.File> RetrieveAllFiles()
+        //Gets all files that exist on account
+        static List<FileList> RetrieveAllFiles(bool WriteFiles)
         {
             DriveService service = DriveServiceCreate();
             List<Google.Apis.Drive.v2.Data.File> result = new List<Google.Apis.Drive.v2.Data.File>();
             FilesResource.ListRequest request = service.Files.List();
+            List<FileList> _FileLists = new List<FileList>();
             do
             {
                 try
@@ -71,6 +73,11 @@ namespace googlesheetstest
 
                     result.AddRange(files.Items);
                     request.PageToken = files.NextPageToken;
+                    _FileLists.Add(files);
+                    
+                    if (WriteFiles)
+                        for (int i = 0; i < files.Items.Count; i++)
+                            Console.WriteLine(files.Items[i].Title);
                 }
                 catch (Exception e)
                 {
@@ -78,7 +85,7 @@ namespace googlesheetstest
                     request.PageToken = null;
                 }
             } while (!String.IsNullOrEmpty(request.PageToken));
-            return result;
+            return _FileLists;
         }   
         static DriveService DriveServiceCreate()
         {
@@ -89,7 +96,8 @@ namespace googlesheetstest
             });
             return service;
         }
-        static void DeleteFile(string fileId)
+        //Delets file with file id
+        static void DeleteFileById(string fileId)
         {
             DriveService service = DriveServiceCreate();
             try
@@ -101,7 +109,17 @@ namespace googlesheetstest
                 Console.WriteLine("An error occurred: " + e.Message);
             }
         } 
-        static void CreateNewSheet(string SheetName)
+        //Delete file with file Title/name
+        static void DeleteFileByTitle(string FileTitle)
+        {
+            List<FileList> fileLists = RetrieveAllFiles(false);
+            for (int l = 0; l < fileLists.Count; l++)
+                for (int f = 0; f < fileLists[l].Items.Count; f++)
+                    if (fileLists[l].Items[f].Title == FileTitle)
+                        DeleteFileById(fileLists[l].Items[f].Id);
+        }
+        //Creates a new sheet with sheetname
+        static void CreateNewSheet(string SheetName, string SheetID)
         {
             SheetsService sheetsService = new SheetsService(new BaseClientService.Initializer
             {
@@ -110,7 +128,10 @@ namespace googlesheetstest
             });
 
             // TODO: Assign values to desired properties of `requestBody`:
-            Data.Spreadsheet requestBody = new Data.Spreadsheet();
+            Data.Spreadsheet requestBody = new Data.Spreadsheet()
+            {
+                SpreadsheetId = SheetID
+            };
             requestBody.Properties = new SpreadsheetProperties();
             requestBody.Properties.Title = SheetName;
 
@@ -125,6 +146,7 @@ namespace googlesheetstest
             // TODO: Change code below to process the `response` object:
             //Console.WriteLine(JsonConvert.SerializeObject(response));
         }
+        //Gets sheet data from cell range
         static void GetSpreadData(string ID ,string SheetName, string Column, int Min, int Max)
         {
             var service = new SheetsService(new BaseClientService.Initializer()
@@ -161,6 +183,7 @@ namespace googlesheetstest
             }
             Console.Read();
         }
+        //Overwrites cells
         static void WriteData(List<object> cellData, string SheetName, string Column, int StartingCell)
         {
             // Create Google Sheets API service.
