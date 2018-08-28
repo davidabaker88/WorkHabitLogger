@@ -34,7 +34,12 @@ namespace googlesheetstest
 
         static void Main(string[] args)
         {
+            IList<Sheet> sheets = new Sheet[2];
+            sheets.Add(MakeNewSheetObject("First sheet"));
+            sheets.Add(MakeNewSheetObject("Second sheet"));
+            CreateNewSheet("MySheet", sheets);
 
+            //DeleteFileByTitle("Kid Sheet");
         }
         static UserCredential GetCredential()
         {
@@ -119,7 +124,7 @@ namespace googlesheetstest
                         DeleteFileById(fileLists[l].Items[f].Id);
         }
         //Creates a new sheet with sheetname
-        static void CreateNewSheet(string SheetName, string SheetID)
+        static void CreateNewSheet(string SheetName)
         {
             SheetsService sheetsService = new SheetsService(new BaseClientService.Initializer
             {
@@ -128,16 +133,11 @@ namespace googlesheetstest
             });
 
             // TODO: Assign values to desired properties of `requestBody`:
-            Data.Spreadsheet requestBody = new Data.Spreadsheet()
-            {
-                SpreadsheetId = SheetID
-            };
+            Data.Spreadsheet requestBody = new Data.Spreadsheet();
             requestBody.Properties = new SpreadsheetProperties();
             requestBody.Properties.Title = SheetName;
 
-
             SpreadsheetsResource.CreateRequest request = sheetsService.Spreadsheets.Create(requestBody);
-
 
             Data.Spreadsheet response = request.Execute();
             string ok = response.SpreadsheetId;
@@ -182,6 +182,43 @@ namespace googlesheetstest
                 Console.WriteLine("No data found.");
             }
             Console.Read();
+        }
+        //Creates a new Sheet with tabs
+        static void CreateNewSheet(string SheetName, IList<Sheet> Sheets)
+        {
+            SheetsService sheetsService = new SheetsService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = GetCredential(),
+                ApplicationName = ApplicationName,
+            });
+
+            // TODO: Assign values to desired properties of `requestBody`:
+            Data.Spreadsheet requestBody = new Data.Spreadsheet();
+            requestBody.Properties = new SpreadsheetProperties();
+            requestBody.Properties.Title = SheetName;
+
+            requestBody.Sheets = Sheets;
+
+            SpreadsheetsResource.CreateRequest request = sheetsService.Spreadsheets.Create(requestBody);
+
+            Data.Spreadsheet response = request.Execute();
+            string ok = response.SpreadsheetId;
+            //1xt6CqlJgpxW2W8rNZvpT9nVRm--xzyo7dVSNY4qQE5w
+
+            // TODO: Change code below to process the `response` object:
+            //Console.WriteLine(JsonConvert.SerializeObject(response));
+        }
+        //Fills out basic sheet data
+        static Sheet MakeNewSheetObject(string _Title)
+        {
+            Sheet sheet = new Sheet()
+            {
+                Properties = new SheetProperties()
+                {
+                    Title = _Title,
+                }
+            };
+            return sheet;
         }
         //Overwrites cells
         static void WriteData(List<object> cellData, string SheetName, string Column, int StartingCell)
