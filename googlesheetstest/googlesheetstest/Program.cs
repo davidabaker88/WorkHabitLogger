@@ -34,13 +34,16 @@ namespace googlesheetstest
 
         static void Main(string[] args)
         {
-            IList<Sheet> sheets = new Sheet[2];
-            sheets.Add(MakeNewSheetObject("First sheet"));
-            sheets.Add(MakeNewSheetObject("Second sheet"));
-            CreateNewSheet("MySheet", sheets);
+            
+            IList<Sheet> sheets = new Sheet[1];
+            sheets[0] = MakeNewSheetObject("Anotha sheet");
 
+            //CreateNewSheet("MySheet", sheets);
+            //AddSheetsToSheetTitle("Grandolf", sheets, "A1:Z500");
             //DeleteFileByTitle("Kid Sheet");
+            //List<object> data = new List<object>() { "where", "Will", "these", "be", "put?"};
         }
+
         static UserCredential GetCredential()
         {
             UserCredential credential;
@@ -63,6 +66,7 @@ namespace googlesheetstest
 
             return credential;
         }
+
         //Gets all files that exist on account
         static List<FileList> RetrieveAllFiles(bool WriteFiles)
         {
@@ -91,7 +95,8 @@ namespace googlesheetstest
                 }
             } while (!String.IsNullOrEmpty(request.PageToken));
             return _FileLists;
-        }   
+        } 
+        
         static DriveService DriveServiceCreate()
         {
             DriveService service = new DriveService(new BaseClientService.Initializer
@@ -101,6 +106,7 @@ namespace googlesheetstest
             });
             return service;
         }
+
         //Delets file with file id
         static void DeleteFileById(string fileId)
         {
@@ -114,15 +120,13 @@ namespace googlesheetstest
                 Console.WriteLine("An error occurred: " + e.Message);
             }
         } 
+
         //Delete file with file Title/name
         static void DeleteFileByTitle(string FileTitle)
         {
-            List<FileList> fileLists = RetrieveAllFiles(false);
-            for (int l = 0; l < fileLists.Count; l++)
-                for (int f = 0; f < fileLists[l].Items.Count; f++)
-                    if (fileLists[l].Items[f].Title == FileTitle)
-                        DeleteFileById(fileLists[l].Items[f].Id);
+            DeleteFileById(GetSheetIdByTitle(FileTitle));
         }
+
         //Creates a new sheet with sheetname
         static void CreateNewSheet(string SheetName)
         {
@@ -146,8 +150,9 @@ namespace googlesheetstest
             // TODO: Change code below to process the `response` object:
             //Console.WriteLine(JsonConvert.SerializeObject(response));
         }
+
         //Gets sheet data from cell range
-        static void GetSpreadData(string ID ,string SheetName, string Column, int Min, int Max)
+        static void GetSpreadData(string SheetTitle ,string SheetName, string Column, int Min, int Max)
         {
             var service = new SheetsService(new BaseClientService.Initializer()
             {
@@ -156,7 +161,7 @@ namespace googlesheetstest
             });
 
             // Define request parameters.
-            String spreadsheetId = ID;
+            String spreadsheetId = GetSheetIdByTitle(SheetTitle);
             String range = SheetName + "!" + Column + Convert.ToString(Min) + ":" + Column + Convert.ToString(Max);
             SpreadsheetsResource.ValuesResource.GetRequest request =
                     service.Spreadsheets.Values.Get(spreadsheetId, range);
@@ -183,8 +188,9 @@ namespace googlesheetstest
             }
             Console.Read();
         }
+
         //Creates a new Sheet with tabs
-        static void CreateNewSheet(string SheetName, IList<Sheet> Sheets)
+        static void CreateNewSheet(string SheetTitle, IList<Sheet> Sheets)
         {
             SheetsService sheetsService = new SheetsService(new BaseClientService.Initializer
             {
@@ -195,19 +201,19 @@ namespace googlesheetstest
             // TODO: Assign values to desired properties of `requestBody`:
             Data.Spreadsheet requestBody = new Data.Spreadsheet();
             requestBody.Properties = new SpreadsheetProperties();
-            requestBody.Properties.Title = SheetName;
+            requestBody.Properties.Title = SheetTitle;
 
             requestBody.Sheets = Sheets;
 
             SpreadsheetsResource.CreateRequest request = sheetsService.Spreadsheets.Create(requestBody);
 
             Data.Spreadsheet response = request.Execute();
-            string ok = response.SpreadsheetId;
-            //1xt6CqlJgpxW2W8rNZvpT9nVRm--xzyo7dVSNY4qQE5w
+
 
             // TODO: Change code below to process the `response` object:
             //Console.WriteLine(JsonConvert.SerializeObject(response));
         }
+
         //Fills out basic sheet data
         static Sheet MakeNewSheetObject(string _Title)
         {
@@ -220,8 +226,53 @@ namespace googlesheetstest
             };
             return sheet;
         }
+
+        static void AddSheetsToSheetTitle(string SheetTitle, IList<Sheet> Sheets, string CellRange)
+        {
+            SheetsService sheetsService = new SheetsService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = GetCredential(),
+                ApplicationName = ApplicationName,
+            });
+            string SheetId = GetSheetIdByTitle(SheetTitle);
+            //Copys the current sheet data and adds to it
+            SpreadsheetsResource.GetRequest getRequest = sheetsService.Spreadsheets.Get(SheetId);
+            Spreadsheet requestBody = getRequest.Execute();
+            requestBody.SpreadsheetId = null;
+
+            //Update values in requestBody cells and sheets
+
+            List<SpreadsheetsResource.ValuesResource.GetRequest> valueRequests = new List<SpreadsheetsResource.ValuesResource.GetRequest>();
+            for (int i = 0; i < requestBody.Sheets.Count; i++)
+                valueRequests.Add(sheetsService.Spreadsheets.Values.Get(SheetId, requestBody.Sheets[i].Properties.Title + "!" + CellRange));
+
+            //execute all requests
+            List<ValueRange> responses = new List<ValueRange>();
+
+            for (int i =0; i < valueRequests.Count; i++)
+                responses.Add(valueRequests[i].Execute());
+
+            //Add sheets to requestBody
+            for (int i = 0; i < Sheets.Count; i++)
+                requestBody.Sheets.Add(Sheets[i]);
+
+            //Overwrite current sheet, delete first sheet
+            SpreadsheetsResource.CreateRequest createRequest = sheetsService.Spreadsheets.Create(requestBody);
+            //delete sheet
+            DeleteFileByTitle(SheetTitle);
+            createRequest.Execute();
+
+            //Update sheets and cells
+            for (int i = 0; i < responses.Count; i++) {
+                SpreadsheetsResource.ValuesResource.UpdateRequest updateRequest =
+                       sheetsService.Spreadsheets.Values.Update(responses[i], GetSheetIdByTitle(SheetTitle), requestBody.Sheets[i].Properties.Title + "!" + CellRange);
+                updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+                updateRequest.Execute();
+            }
+        }
+
         //Overwrites cells
-        static void WriteData(List<object> cellData, string SheetName, string Column, int StartingCell)
+        static void WriteData(string SheetTitle, string SheetName, string Column, int StartingCell, List<object> cellData)
         {
             // Create Google Sheets API service.
             var service = new SheetsService(new BaseClientService.Initializer()
@@ -238,7 +289,7 @@ namespace googlesheetstest
             valueRange.Values = new List<IList<object>> { oblist };
 
             // Define request parameters.
-            String spreadsheetId = "160fIGNBuzud5JJ4Cd6cjLiUrVF3looxxw-gd1G3dc_s";
+            String spreadsheetId = GetSheetIdByTitle(SheetTitle);
             String range = SheetName + "!" + Column + Convert.ToString(StartingCell) + ":" + Column + Convert.ToString(StartingCell + cellData.Count);
             SpreadsheetsResource.ValuesResource.UpdateRequest request =
                     service.Spreadsheets.Values.Update(valueRange, spreadsheetId, range);
@@ -246,5 +297,17 @@ namespace googlesheetstest
             UpdateValuesResponse result2 = request.Execute();
 
         }
+
+        //Gets sheet id from sheet name
+        static string GetSheetIdByTitle(string SheetTitle)
+        {
+            List<FileList> fileLists = RetrieveAllFiles(false);
+            for (int l = 0; l < fileLists.Count; l++)
+                for (int f = 0; f < fileLists[l].Items.Count; f++)
+                    if (fileLists[l].Items[f].Title == SheetTitle)
+                        return fileLists[l].Items[f].Id;
+            return null;
+        }
+        
     }
 }
