@@ -37,7 +37,7 @@ namespace Behaivoir_Logger
             UserCredential credential;
 
             using (var stream =
-                new FileStream("C:/Users/chartsuff/Downloads/client_id.json", FileMode.Open, FileAccess.Read))
+                new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
             {
                 string credPath = System.Environment.GetFolderPath(
                     System.Environment.SpecialFolder.Personal);
@@ -54,28 +54,7 @@ namespace Behaivoir_Logger
 
             return credential;
         }
-        public static List<Google.Apis.Drive.v2.Data.File> RetrieveAllFiles()
-        {
-            DriveService service = DriveServiceCreate();
-            List<Google.Apis.Drive.v2.Data.File> result = new List<Google.Apis.Drive.v2.Data.File>();
-            FilesResource.ListRequest request = service.Files.List();
-            do
-            {
-                try
-                {
-                    FileList files = request.Execute();
 
-                    result.AddRange(files.Items);
-                    request.PageToken = files.NextPageToken;
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("An error occurred: " + e.Message);
-                    request.PageToken = null;
-                }
-            } while (!String.IsNullOrEmpty(request.PageToken));
-            return result;
-        }
         public static DriveService DriveServiceCreate()
         {
             DriveService service = new DriveService(new BaseClientService.Initializer
@@ -85,7 +64,9 @@ namespace Behaivoir_Logger
             });
             return service;
         }
-        public static void DeleteFile(string fileId)
+
+        //Delets file with file id
+        public static void DeleteFileById(string fileId)
         {
             DriveService service = DriveServiceCreate();
             try
@@ -97,13 +78,19 @@ namespace Behaivoir_Logger
                 Console.WriteLine("An error occurred: " + e.Message);
             }
         }
+
+        //Delete file with file Title/name
+        public static void DeleteFileByTitle(string FileTitle)
+        {
+            DeleteFileById(GetSheetIdByTitle(FileTitle));
+        }
         /// <summary>
         /// creates a new Google Sheet and returns the ID
         /// </summary>
         /// <param name="SheetName"></param>
         /// <returns></returns>
         public static String CreateNewSheet(string SheetName)
-        {  
+        {
             SheetsService sheetsService = new SheetsService(new BaseClientService.Initializer
             {
                 HttpClientInitializer = GetCredential(),
@@ -121,7 +108,32 @@ namespace Behaivoir_Logger
 
             Data.Spreadsheet response = request.Execute();
             return response.SpreadsheetId;
-            //1xt6CqlJgpxW2W8rNZvpT9nVRm--xzyo7dVSNY4qQE5w
+
+        }
+        /// <summary>
+        /// create a new Spreadsheet with defined tabs specified by the Sheets parameter
+        /// </summary>
+        /// <param name="SheetTitle"></param>
+        /// <param name="Sheets"></param>
+        public static void CreateNewSheet(string SheetTitle, IList<Sheet> Sheets)
+        {
+            SheetsService sheetsService = new SheetsService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = GetCredential(),
+                ApplicationName = ApplicationName,
+            });
+
+            // TODO: Assign values to desired properties of `requestBody`:
+            Data.Spreadsheet requestBody = new Data.Spreadsheet();
+            requestBody.Properties = new SpreadsheetProperties();
+            requestBody.Properties.Title = SheetTitle;
+
+            requestBody.Sheets = Sheets;
+
+            SpreadsheetsResource.CreateRequest request = sheetsService.Spreadsheets.Create(requestBody);
+
+            Data.Spreadsheet response = request.Execute();
+
 
             // TODO: Change code below to process the `response` object:
             //Console.WriteLine(JsonConvert.SerializeObject(response));
@@ -145,7 +157,7 @@ namespace Behaivoir_Logger
             });
 
             // Define request parameters.
-            String range = sheetName + "!" + startCell + ":" +endCell;
+            String range = sheetName + "!" + startCell + ":" + endCell;
             SpreadsheetsResource.ValuesResource.GetRequest request =
                     service.Spreadsheets.Values.Get(spreadsheetId, range);
 
@@ -153,8 +165,161 @@ namespace Behaivoir_Logger
             // https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
             ValueRange response = request.Execute();
             return response.Values;
-           
+
         }
+
+        public static int GetNextRowNum(String spreadsheetId, String sheetName, String startCell, String endCell)
+        {
+            IList<IList<Object>> values = GetSpreadData(spreadsheetId, sheetName, startCell, endCell);
+            return values.Count;// +1?
+        }
+
+
+        //Gets sheet id from sheet name
+        public static string GetSheetIdByTitle(string SheetTitle)
+        {
+            List<FileList> fileLists = RetrieveAllFiles(false);
+            Console.WriteLine("num files: " + fileLists.Count);
+            for (int l = 0; l < fileLists.Count; l++)
+                for (int f = 0; f < fileLists[l].Items.Count; f++)
+                {
+                    Console.WriteLine("file name: " + fileLists[l].Items[f].Title);
+                    if (fileLists[l].Items[f].Title == SheetTitle)
+                        Console.ReadKey();
+                        return fileLists[l].Items[f].Id;
+                }
+            Console.ReadKey();
+            return null;
+        }
+        //Gets all files that exist on account
+        static List<FileList> RetrieveAllFiles(bool WriteFiles)
+        {
+            DriveService service = DriveServiceCreate();
+            List<Google.Apis.Drive.v2.Data.File> result = new List<Google.Apis.Drive.v2.Data.File>();
+            FilesResource.ListRequest request = service.Files.List();
+            List<FileList> _FileLists = new List<FileList>();
+            do
+            {
+                try
+                {
+                    FileList files = request.Execute();
+
+                    result.AddRange(files.Items);
+                    request.PageToken = files.NextPageToken;
+                    _FileLists.Add(files);
+
+                    if (WriteFiles)
+                        for (int i = 0; i < files.Items.Count; i++)
+                            Console.WriteLine(files.Items[i].Title);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("An error occurred: " + e.Message);
+                    request.PageToken = null;
+                }
+            } while (!String.IsNullOrEmpty(request.PageToken));
+            return _FileLists;
+        }
+        //Fills out basic sheet data
+        public static Sheet MakeNewSheetObject(string _Title)
+        {
+            Sheet sheet = new Sheet()
+            {
+                Properties = new SheetProperties()
+                {
+                    Title = _Title,
+                }
+            };
+            return sheet;
+        }
+        /// <summary>
+        /// adds tabs specified by "Sheets" to existing sheet //FIXME is this what this does
+        /// </summary>
+        /// <param name="SheetTitle"></param>
+        /// <param name="Sheets"></param>
+        /// <param name="CellRange"></param>
+        public static void AddSheetsToSheetTitle(string SheetTitle, IList<Sheet> Sheets, string CellRange)
+        {
+            SheetsService sheetsService = new SheetsService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = GetCredential(),
+                ApplicationName = ApplicationName,
+            });
+            string SheetId = GetSheetIdByTitle(SheetTitle);
+            //Copys the current sheet data and adds to it
+            SpreadsheetsResource.GetRequest getRequest = sheetsService.Spreadsheets.Get(SheetId);
+            Spreadsheet requestBody = getRequest.Execute();
+            requestBody.SpreadsheetId = null;
+
+            //Update values in requestBody cells and sheets
+
+            List<SpreadsheetsResource.ValuesResource.GetRequest> valueRequests = new List<SpreadsheetsResource.ValuesResource.GetRequest>();
+            for (int i = 0; i < requestBody.Sheets.Count; i++)
+                valueRequests.Add(sheetsService.Spreadsheets.Values.Get(SheetId, requestBody.Sheets[i].Properties.Title + "!" + CellRange));
+
+            //execute all requests
+            List<ValueRange> responses = new List<ValueRange>();
+
+            for (int i = 0; i < valueRequests.Count; i++)
+                responses.Add(valueRequests[i].Execute());
+
+            //Add sheets to requestBody
+            for (int i = 0; i < Sheets.Count; i++)
+                requestBody.Sheets.Add(Sheets[i]);
+
+            //Overwrite current sheet, delete first sheet
+            SpreadsheetsResource.CreateRequest createRequest = sheetsService.Spreadsheets.Create(requestBody);
+            //delete sheet
+            DeleteFileByTitle(SheetTitle);
+            createRequest.Execute();
+
+            //Update sheets and cells
+            for (int i = 0; i < responses.Count; i++)
+            {
+                SpreadsheetsResource.ValuesResource.UpdateRequest updateRequest =
+                       sheetsService.Spreadsheets.Values.Update(responses[i], GetSheetIdByTitle(SheetTitle), requestBody.Sheets[i].Properties.Title + "!" + CellRange);
+                updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+                updateRequest.Execute();
+            }
+        }
+        /// <summary>
+        /// adds blank tab specified by SheetName to spreadsheet
+        /// </summary>
+        /// <param name="SpreadSheetID"></param>
+        /// <param name="SheetName"></param>
+        public static void AddTabToSpreadSheet(string SpreadSheetID, string SheetName)
+        {
+
+            var service = new SheetsService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = GetCredential(),
+                ApplicationName = ApplicationName,
+            });
+
+            // Add new Sheet
+            var addSheetRequest = new AddSheetRequest();
+            addSheetRequest.Properties = new SheetProperties();
+            addSheetRequest.Properties.Title = SheetName;
+            BatchUpdateSpreadsheetRequest batchUpdateSpreadsheetRequest = new BatchUpdateSpreadsheetRequest();
+            batchUpdateSpreadsheetRequest.Requests = new List<Request>();
+            batchUpdateSpreadsheetRequest.Requests.Add(new Request
+            {
+                AddSheet = addSheetRequest
+            });
+
+            var batchUpdateRequest =
+                service.Spreadsheets.BatchUpdate(batchUpdateSpreadsheetRequest, SpreadSheetID);
+
+            batchUpdateRequest.Execute();
+        }
+        /// <summary>
+        /// Writes Data in list to rectangle specified by startCell and endCell.  This will overwrite existing data
+        /// </summary>
+        /// <param name="spreadSheetID"></param>
+        /// <param name="cellData"></param>
+        /// <param name="SheetName"></param>
+        /// <param name="startCell"></param>
+        /// <param name="endCell"></param>
         public static void WriteData(String spreadSheetID, List<object> cellData, string SheetName, String startCell, String endCell)
         {
             // Create Google Sheets API service.
@@ -172,18 +337,95 @@ namespace Behaivoir_Logger
             valueRange.Values = new List<IList<object>> { oblist };
 
             // Define request parameters.
-            String range = SheetName + "!" + Column + Convert.ToString(StartingCell) + ":" + Column + Convert.ToString(StartingCell + cellData.Count);
+            String range = SheetName + "!" + startCell + ":" + endCell;
             SpreadsheetsResource.ValuesResource.UpdateRequest request =
                     service.Spreadsheets.Values.Update(valueRange, spreadSheetID, range);
             request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
             UpdateValuesResponse result2 = request.Execute();
 
         }
+        /// <summary>
+        /// Writes Data to the cell specified by writeCell. This will overwrite existing data
+        /// </summary>
+        /// <param name="spreadSheetID"></param>
+        /// <param name="cellData"></param>
+        /// <param name="SheetName"></param>
+        /// <param name="startCell"></param>
+        /// <param name="endCell"></param>
+        public static void WriteCellData(String spreadSheetID, object cellData, string SheetName, String writeCell)
+        {
+            string endCell = writeCell;
+            List<object> cellDataList = new List<object> { cellData };
+            WriteData(spreadSheetID, cellDataList, SheetName, writeCell, endCell);
 
+        }
         //create lock cells function
 
         //create unlock cells function
 
-        //create add Sheet function
+        //sharing sheets
+        public static void ShareSheet(String spreadSheetID, string emailAddress)
+        {
+            var service = new DriveService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = GetCredential(),
+                ApplicationName = ApplicationName,
+            });
+            InsertPermission(service, spreadSheetID, emailAddress, "user", "writer");
+        }
+
+        public static Permission InsertPermission(DriveService service, String fileId, String value,
+     String type, String role)
+        {
+            Permission newPermission = new Permission();
+            newPermission.Value = value;
+            newPermission.Type = type;
+            newPermission.Role = role;
+            try
+            {
+                return service.Permissions.Insert(newPermission, fileId).Execute();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("An error occurred: " + e.Message);
+                return null;
+            }
+        }
     }
+  
+
+    /*static void Main(string[] args)
+    {
+
+        IList<Sheet> sheets = new Sheet[1];
+        sheets[0] = MakeNewSheetObject("Anotha sheet");
+
+        CreateNewSheet("MySheet", sheets);
+        //AddSheetsToSheetTitle("Grandolf", sheets, "A1:Z500");
+        //DeleteFileByTitle("Kid Sheet");
+        //List<object> data = new List<object>() { "where", "Will", "these", "be", "put?"};
+    }*/
+
+   
+
+
+
+  
+
+
+
+ 
+
+    
+
+  
+
+   
+
+   
+
+    
+
+   
+
 }

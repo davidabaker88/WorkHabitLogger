@@ -30,7 +30,7 @@ namespace googlesheetstest
         static string ApplicationName = "Google Sheets API .NET Quickstart";
         static List<object> listData = new List<object>();
         static List<Google.Apis.Drive.v2.Data.File> Files;
-       
+      
 
         static void Main(string[] args)
         {
@@ -38,7 +38,7 @@ namespace googlesheetstest
             IList<Sheet> sheets = new Sheet[1];
             sheets[0] = MakeNewSheetObject("Anotha sheet");
 
-            //CreateNewSheet("MySheet", sheets);
+            CreateNewSheet("MySheet", sheets);
             //AddSheetsToSheetTitle("Grandolf", sheets, "A1:Z500");
             //DeleteFileByTitle("Kid Sheet");
             //List<object> data = new List<object>() { "where", "Will", "these", "be", "put?"};
@@ -49,7 +49,7 @@ namespace googlesheetstest
             UserCredential credential;
 
             using (var stream =
-                new FileStream("C:/Personal/client_secret_699128106834-e5rm37goeq1qmip1n2cdkluomacqb16n.apps.googleusercontent.com.json", FileMode.Open, FileAccess.Read))
+                new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
             {
                 string credPath = System.Environment.GetFolderPath(
                     System.Environment.SpecialFolder.Personal);

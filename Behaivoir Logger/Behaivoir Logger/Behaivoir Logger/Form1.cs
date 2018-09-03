@@ -24,7 +24,7 @@ namespace Behaivoir_Logger
         private string pmConfigSheet;
         private string courseName;
         private string suffix;
-        private String spreadsheetId = "160fIGNBuzud5JJ4Cd6cjLiUrVF3looxxw-gd1G3dc_s"; //fixme
+        private String spreadsheetId; //fixme
 
         public Form1()
         {
@@ -34,7 +34,7 @@ namespace Behaivoir_Logger
 
             courseName = "Programming";//temp for now fixme
             suffix = "_18_19";//temp for now fixme
-
+            spreadsheetId = "1qLpKVRoHulDbstC_BOE9X5X81iJY-uQoerFtBO6IhE8";//Utils.GetSheetIdByTitle(courseName + suffix);
             amConfigSheet = "StudentInfoAM";
             pmConfigSheet = "StudentInfoPM";
             amClassMode = true;
@@ -49,27 +49,34 @@ namespace Behaivoir_Logger
         {
             int userNameCol = 1;
             int displayNameCol = 0;
-            int sheetIDCol = 2;
+            int sheetIDCol = 2; //need to create function
             //read section from CfgSheet
             IList<IList<Object>> studentConfigData =Utils.GetSpreadData(spreadsheetId, studentCfgFileName, "A1","C30");//fix range
             if (studentConfigData != null && studentConfigData.Count > 0)
             {
+                int rowNum = 1;//skip header row
                 foreach (var row in studentConfigData)
                 {
+                    rowNum++;
+                    //check if tab exists, if not add tab, create sheet and share
                     //create new student and add in information.  Add student to studentDictionary
-                    if (row.Count > 3)
+                    if (row.Count ==2)
                     {
-                        studentDictionary.Add((string)row[userNameCol], new Student((string)row[userNameCol], (string)row[displayNameCol], courseName));
+                        studentDictionary.Add((string)row[userNameCol], new Student((string)row[userNameCol], (string)row[displayNameCol], courseName+suffix));
+                        //write new sheet ID to cell
+                        Utils.WriteCellData(spreadsheetId, studentDictionary[(string)row[userNameCol]].getSheetID(), studentCfgFileName, "C" + rowNum);
+                        //create new tab
+                        Utils.AddTabToSpreadSheet(spreadsheetId, studentDictionary[(string)row[userNameCol]].getSheetName());
+                    }
+                    else if (row.Count ==3)
+                    {
+                        studentDictionary.Add((string)row[userNameCol], new Student((string)row[userNameCol], (string)row[displayNameCol], courseName+suffix, (string)row[sheetIDCol]));
                     }
                     else
                     {
-                        studentDictionary.Add((string)row[userNameCol], new Student((string)row[userNameCol], (string)row[displayNameCol], courseName, (string)row[sheetIDCol]));
+                        Console.WriteLine("could not find username and display name for student on row."+rowNum);
+                        Console.ReadKey();
                     }
-                    foreach (var col in row)
-                    {
-                        Console.Write(col + ",");
-                    }
-                    Console.WriteLine();
                 }
             }
             else
@@ -294,50 +301,31 @@ namespace Behaivoir_Logger
             snapshotBtn.BackColor = Color.Transparent;
         }
 
-        private void WriteToCSV(string studentName, int onTask, string comments, List<int> workHabitsList)
+        private void WriteToCSV(string userName, int onTask, string comments, List<int> workHabitsList)
         {
             //get last row written
+            int rowNum = Utils.GetNextRowNum(spreadsheetId, userName, "A1", "B");
             string[] defaultComments = new string[2];
             defaultComments[0] = "Student was not on task when doing scan of the class";
             defaultComments[1] = "Student was on task when doing scan of the class";
             //write the information to sheet, set up cell data list(date,name,observation,comments,workhabits1-10,countableObservation
 
-            string dateTime = DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss");
-           
             //write date
-            
-            //write name
+            string dateTime = DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss");
+            Utils.WriteCellData(spreadsheetId, dateTime, userName, "A" + rowNum);
+            //write student name for debug to make sure it works
+            Utils.WriteCellData(spreadsheetId, userName, userName, "B" + rowNum);
+            //write observer
+            Utils.WriteCellData(spreadsheetId, "David Baker", userName, "C"+rowNum); //fix me replace hardcode with text box
             //write observation
+            Utils.WriteCellData(spreadsheetId, defaultComments[onTask], userName, "D"+rowNum);
             //write comments
+            Utils.WriteCellData(spreadsheetId, comments, userName, "E" + rowNum);
+            //write 1 or zero (positive or negative)
+            Utils.WriteCellData(spreadsheetId, onTask, userName, "F" + rowNum);
+            //write a 1 for countable
+            Utils.WriteCellData(spreadsheetId, 1, userName, "G" + rowNum);
 
-
-
-            //write the information regarding workhabit categories to csv file
-            int index = 0;
-            for (int i = 1; i <= 10; i++)
-            {
-                //this compares to see if item in list in config file matches this list
-                if (workHabitsList[index] == i)
-                {
-                    if (onTask == 1)
-                    {
-                        sw.Write("1");
-                    }
-                    else
-                    {
-                        sw.Write("0");
-                    }
-                    index++;
-                    if (index >= workHabitsList.Count)
-                    {
-                        break;
-                    }
-                }
-                
-            }
-            sw.Write("1"); //write 1 in total observations
-            //write all at once
-            WriteData(spreadsheetId, List<object> cellData, string SheetName, String startCell, String endCell)
         }
 
         private void pullReportBtn_Click(object sender, EventArgs e)
