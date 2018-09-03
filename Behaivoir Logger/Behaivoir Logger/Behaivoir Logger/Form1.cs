@@ -54,10 +54,11 @@ namespace Behaivoir_Logger
             IList<IList<Object>> studentConfigData =Utils.GetSpreadData(spreadsheetId, studentCfgFileName, "A1","C30");//fix range
             if (studentConfigData != null && studentConfigData.Count > 0)
             {
-                int rowNum = 1;//skip header row
+                int rowNum = 0;//skip header row
                 foreach (var row in studentConfigData)
                 {
                     rowNum++;
+                    if(rowNum == 1){continue;}//skip first row
                     //check if tab exists, if not add tab, create sheet and share
                     //create new student and add in information.  Add student to studentDictionary
                     if (row.Count ==2)
@@ -304,7 +305,10 @@ namespace Behaivoir_Logger
         private void WriteToCSV(string userName, int onTask, string comments, List<int> workHabitsList)
         {
             //get last row written
-            int rowNum = Utils.GetNextRowNum(spreadsheetId, userName, "A1", "B");
+            Student test = studentDictionary[userName];
+            string sheetName = studentDictionary[userName].getSheetName();
+            int rowNum = Utils.GetNextRowNum(spreadsheetId, sheetName, "A1", "B");
+            
             string[] defaultComments = new string[2];
             defaultComments[0] = "Student was not on task when doing scan of the class";
             defaultComments[1] = "Student was on task when doing scan of the class";
@@ -312,19 +316,19 @@ namespace Behaivoir_Logger
 
             //write date
             string dateTime = DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss");
-            Utils.WriteCellData(spreadsheetId, dateTime, userName, "A" + rowNum);
+            Utils.WriteCellData(spreadsheetId, dateTime, sheetName, "A" + rowNum);
             //write student name for debug to make sure it works
-            Utils.WriteCellData(spreadsheetId, userName, userName, "B" + rowNum);
+            Utils.WriteCellData(spreadsheetId, userName, sheetName, "B" + rowNum);
             //write observer
-            Utils.WriteCellData(spreadsheetId, "David Baker", userName, "C"+rowNum); //fix me replace hardcode with text box
+            Utils.WriteCellData(spreadsheetId, "David Baker", sheetName, "C"+rowNum); //fix me replace hardcode with text box
             //write observation
-            Utils.WriteCellData(spreadsheetId, defaultComments[onTask], userName, "D"+rowNum);
+            Utils.WriteCellData(spreadsheetId, defaultComments[onTask], sheetName, "D"+rowNum);
             //write comments
-            Utils.WriteCellData(spreadsheetId, comments, userName, "E" + rowNum);
+            Utils.WriteCellData(spreadsheetId, comments, sheetName, "E" + rowNum);
             //write 1 or zero (positive or negative)
-            Utils.WriteCellData(spreadsheetId, onTask, userName, "F" + rowNum);
+            Utils.WriteCellData(spreadsheetId, onTask, sheetName, "F" + rowNum);
             //write a 1 for countable
-            Utils.WriteCellData(spreadsheetId, 1, userName, "G" + rowNum);
+            Utils.WriteCellData(spreadsheetId, 1, sheetName, "G" + rowNum);
 
         }
 

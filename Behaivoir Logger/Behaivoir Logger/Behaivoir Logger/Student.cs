@@ -20,16 +20,17 @@ namespace Behaivoir_Logger
             courseName = CourseName;
             sheetID = CreateNewStudentSheet(userName + courseName);
         }
-        public Student(String UserName, String DisplayName, String courseName, String SheetID)
+        public Student(String UserName, String DisplayName, String CourseName, String SheetID)
         {
             userName = UserName;
             displayName = DisplayName;
+            courseName = CourseName;
             sheetID = SheetID;
         }
         public String getUserName() { return userName; }
         public String getDisplayName() { return displayName; }
         public String getSheetID() { return sheetID; }
-        public String getSheetName() { return userName + courseName; }
+        public String getSheetName() { return userName +"_"+ courseName; }
         private String CreateNewStudentSheet(String SheetName)
         {
             //create sheet

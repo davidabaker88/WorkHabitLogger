@@ -171,7 +171,7 @@ namespace Behaivoir_Logger
         public static int GetNextRowNum(String spreadsheetId, String sheetName, String startCell, String endCell)
         {
             IList<IList<Object>> values = GetSpreadData(spreadsheetId, sheetName, startCell, endCell);
-            return values.Count;// +1?
+            return values.Count+1;
         }
 
 
