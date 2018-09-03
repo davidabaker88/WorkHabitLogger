@@ -63,15 +63,18 @@ namespace Behaivoir_Logger
                     //create new student and add in information.  Add student to studentDictionary
                     if (row.Count ==2)
                     {
-                        studentDictionary.Add((string)row[userNameCol], new Student((string)row[userNameCol], (string)row[displayNameCol], courseName+suffix));
+                        studentDictionary.Add((string)row[userNameCol], new Student((string)row[userNameCol], (string)row[displayNameCol], courseName+suffix,spreadsheetId));
                         //write new sheet ID to cell
                         Utils.WriteCellData(spreadsheetId, studentDictionary[(string)row[userNameCol]].getSheetID(), studentCfgFileName, "C" + rowNum);
                         //create new tab
                         Utils.AddTabToSpreadSheet(spreadsheetId, studentDictionary[(string)row[userNameCol]].getSheetName());
+                        //fill in header information
+                        List<object> cellDataList = new List<object> { "dateTime","username","observer","observation","comments","ontask(0 for offtask)","countable" };
+                        Utils.WriteData(spreadsheetId, cellDataList, studentDictionary[(string)row[userNameCol]].getSheetName(), "A1", "G1");
                     }
                     else if (row.Count ==3)
                     {
-                        studentDictionary.Add((string)row[userNameCol], new Student((string)row[userNameCol], (string)row[displayNameCol], courseName+suffix, (string)row[sheetIDCol]));
+                        studentDictionary.Add((string)row[userNameCol], new Student((string)row[userNameCol], (string)row[displayNameCol], courseName+suffix, (string)row[sheetIDCol],spreadsheetId));
                     }
                     else
                     {
@@ -138,14 +141,14 @@ namespace Behaivoir_Logger
             if (!snapMode && !reportMode)
             {
                 //open new form pass in student name
-                using (Observation observationPopup = new Observation(courseName, suffix))
+               /* using (Observation observationPopup = new Observation(courseName, suffix))
                 {
                     observationPopup.Text = studentBtn.Text;
                     observationPopup.userName = studentBtn.userName;
                     if (observationPopup.ShowDialog() == DialogResult.OK)
                     {
                     }
-                }
+                }*/ //disable for now to prevent crash
             }
             else
             {

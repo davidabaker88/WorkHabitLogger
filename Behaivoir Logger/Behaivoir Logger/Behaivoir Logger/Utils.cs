@@ -115,7 +115,7 @@ namespace Behaivoir_Logger
         /// </summary>
         /// <param name="SheetTitle"></param>
         /// <param name="Sheets"></param>
-        public static void CreateNewSheet(string SheetTitle, IList<Sheet> Sheets)
+        public static String CreateNewSheet(string SheetTitle, IList<Sheet> Sheets)
         {
             SheetsService sheetsService = new SheetsService(new BaseClientService.Initializer
             {
@@ -133,10 +133,9 @@ namespace Behaivoir_Logger
             SpreadsheetsResource.CreateRequest request = sheetsService.Spreadsheets.Create(requestBody);
 
             Data.Spreadsheet response = request.Execute();
+            return response.SpreadsheetId;
 
-
-            // TODO: Change code below to process the `response` object:
-            //Console.WriteLine(JsonConvert.SerializeObject(response));
+           
         }
         /// <summary>
         /// Gets a rectangle of data from the googleSheet indicated by spreadSheetID.
@@ -330,8 +329,7 @@ namespace Behaivoir_Logger
             });
 
             ValueRange valueRange = new ValueRange();
-            valueRange.MajorDimension = "COLUMNS";//"ROWS";//COLUMNS
-
+            valueRange.MajorDimension = "ROWS";//COLUMNS
             //var oblist = new List<object>() {};
             var oblist = cellData;
             valueRange.Values = new List<IList<object>> { oblist };
@@ -340,7 +338,7 @@ namespace Behaivoir_Logger
             String range = SheetName + "!" + startCell + ":" + endCell;
             SpreadsheetsResource.ValuesResource.UpdateRequest request =
                     service.Spreadsheets.Values.Update(valueRange, spreadSheetID, range);
-            request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+            request.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.USERENTERED;
             UpdateValuesResponse result2 = request.Execute();
 
         }
