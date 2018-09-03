@@ -172,9 +172,38 @@ namespace Behaivoir_Logger
             IList<IList<Object>> values = GetSpreadData(spreadsheetId, sheetName, startCell, endCell);
             return values.Count+1;
         }
+        /// <summary>
+        /// this will get the index of the sheet's location to be used for GridRange usages,returns -1 if not found
+        /// </summary>
+        /// <param name="SheetName"></param>
+        /// <returns></returns>
+        public static int? GetSheetIdBySheetName(string spreadsheetId, string SheetName)
+        {
+            SheetsService sheetsService = new SheetsService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = GetCredential(),
+                ApplicationName = ApplicationName,
+            });
+            SpreadsheetsResource.GetRequest request = sheetsService.Spreadsheets.Get(spreadsheetId);
 
-
-        //Gets sheet id from sheet name
+            // To execute asynchronously in an async method, replace `request.Execute()` as shown:
+            Data.Spreadsheet response = request.Execute();
+            
+            for ( int i =0; i<response.Sheets.Count;i++){
+                Sheet tempSheet = response.Sheets[i];
+                if (tempSheet.Properties.Title == SheetName)
+                {
+                    return tempSheet.Properties.SheetId;
+                }
+            
+            }
+            return -1;
+        }
+        /// <summary>
+        /// gets the spreadsheet id from the name of the file (not sure if this works in the case of multiple files with same name
+        /// </summary>
+        /// <param name="SheetTitle"></param>
+        /// <returns></returns>
         public static string GetSheetIdByTitle(string SheetTitle)
         {
             List<FileList> fileLists = RetrieveAllFiles(false);
@@ -184,10 +213,10 @@ namespace Behaivoir_Logger
                 {
                     Console.WriteLine("file name: " + fileLists[l].Items[f].Title);
                     if (fileLists[l].Items[f].Title == SheetTitle)
-                        Console.ReadKey();
+                        
                         return fileLists[l].Items[f].Id;
                 }
-            Console.ReadKey();
+           
             return null;
         }
         //Gets all files that exist on account
@@ -310,6 +339,47 @@ namespace Behaivoir_Logger
                 service.Spreadsheets.BatchUpdate(batchUpdateSpreadsheetRequest, SpreadSheetID);
 
             batchUpdateRequest.Execute();
+        }
+        /// <summary>
+        /// locks the cells for a sheet, 
+        /// </summary>
+        /// <param name="SpreadSheetID"></param>
+        /// <param name="SheetName"></param>
+        public static void AddLockCells(string SpreadSheetID, string SheetName, int startCol,int endCol,int? startRow,int? endRow)
+        {
+
+            var service = new SheetsService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = GetCredential(),
+                ApplicationName = ApplicationName,
+            });
+
+            // Add locked request parameters
+            var addLockedCellRequest = new AddProtectedRangeRequest();
+            addLockedCellRequest.ProtectedRange = new ProtectedRange();
+            addLockedCellRequest.ProtectedRange.Range = new GridRange();
+            addLockedCellRequest.ProtectedRange.Range.SheetId = GetSheetIdBySheetName(SpreadSheetID,SheetName);
+            addLockedCellRequest.ProtectedRange.Range.EndColumnIndex = endCol;
+            addLockedCellRequest.ProtectedRange.Range.EndRowIndex = endRow;
+            addLockedCellRequest.ProtectedRange.Range.StartColumnIndex = startCol;
+            addLockedCellRequest.ProtectedRange.Range.StartRowIndex = startRow;
+            addLockedCellRequest.ProtectedRange.Editors = new Editors();
+            addLockedCellRequest.ProtectedRange.Editors.Users = new List<string>();
+            addLockedCellRequest.ProtectedRange.Editors.Users.Add("davidabaker88@gmail.com");
+            addLockedCellRequest.ProtectedRange.Editors.DomainUsersCanEdit = false;
+
+            BatchUpdateSpreadsheetRequest batchUpdateSpreadsheetRequest = new BatchUpdateSpreadsheetRequest();
+            batchUpdateSpreadsheetRequest.Requests = new List<Request>();
+            batchUpdateSpreadsheetRequest.Requests.Add(new Request
+            {
+                AddProtectedRange = addLockedCellRequest
+            });
+
+            var batchUpdateRequest =
+                service.Spreadsheets.BatchUpdate(batchUpdateSpreadsheetRequest, SpreadSheetID);
+
+           BatchUpdateSpreadsheetResponse result = batchUpdateRequest.Execute();
+            int i = 1;
         }
         /// <summary>
         /// Writes Data in list to rectangle specified by startCell and endCell.  This will overwrite existing data

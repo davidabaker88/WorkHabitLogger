@@ -35,16 +35,18 @@ namespace Behaivoir_Logger
         public String getSheetName() { return userName +"_"+ courseName; }
         private String CreateNewStudentSheet(String SheetName,String mainSheetID)
         {
+            string tabName = "participation";
             //create sheet
             IList<Sheet> sheets = new Sheet[1];
-            sheets[0] = Utils.MakeNewSheetObject("participation");
+            sheets[0] = Utils.MakeNewSheetObject(tabName);
             String newSheetID =  Utils.CreateNewSheet(userName +"_"+ courseName,sheets);
             //import cells line
             //=importrange("sheetID","sheetName!A2:B3")
-            var formula = "=importrange(\"" + mainSheetID + "\",\"" + getSheetName() + "!A1:K\")";
-            Utils.WriteCellData(newSheetID, formula, "participation", "A1");
-           
+            var formula = "=importrange(\"" + mainSheetID + "\",\"" + getSheetName() + "!A1:I\")";
+            Utils.WriteCellData(newSheetID, formula, tabName, "A1");
+
             //lock cells in student sheet
+            Utils.AddLockCells(newSheetID, tabName, 0, 8, 10, 10);
             //share student sheets
 
 

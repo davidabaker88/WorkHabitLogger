@@ -79,7 +79,7 @@ namespace Behaivoir_Logger
                     else
                     {
                         Console.WriteLine("could not find username and display name for student on row."+rowNum);
-                        Console.ReadKey();
+                        //Console.ReadKey();
                     }
                 }
             }
