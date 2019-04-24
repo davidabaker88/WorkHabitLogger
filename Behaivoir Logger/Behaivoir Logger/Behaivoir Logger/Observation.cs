@@ -49,7 +49,7 @@ namespace Behaivoir_Logger
             bool foundButton = false;
             //read in config file to set up all of the buttons and corresponding data
             StreamReader inputFile;
-            inputFile = File.OpenText("I:/"+courseName+"/BehaviorLogger/Observation.cfg");
+            inputFile = File.OpenText("Observation.txt");
             while (!inputFile.EndOfStream){
 	            line = inputFile.ReadLine();
                 //find start of a button - allow to exclude comments etc in cfg file
@@ -74,16 +74,19 @@ namespace Behaivoir_Logger
                         //should be inside start/end Button in config file
                         if (line.Contains("Name="))
                         {
+                            //add name of observation to the list
                             String[] subStrings = line.Split('=');
                             obsBtnTextList.Add(subStrings[1]);
                         }
                         else if (line.Contains("Text="))
                         {
+                            //add default comment to list of observation to the list
                             String[] subStrings = line.Split('=');
                             obsLogTextList.Add(subStrings[1]);
                         }
                         else if (line.Contains("Work Habits="))
                         {
+                            //add list of workhabits to be affected to list
                             String[] tmpSubStrings = line.Split('=');
                             String[] subStrings = tmpSubStrings[1].Split(',');
                             Array.Sort(subStrings);
@@ -91,6 +94,7 @@ namespace Behaivoir_Logger
                         }
                         else if (line.Contains("PosNeg="))
                         {
+                            //set default posNeg value
                             String[] subStrings = line.Split('=');
                             obsPosNegList.Add(subStrings[1]);
                         }
@@ -127,9 +131,6 @@ namespace Behaivoir_Logger
             Button observationType = sender as Button;
                 //show popup with text entry to write to file
             string comments;
-            string basePath  = "I:/"+courseName+"/";
-            string defaultFolder = "BehaviorLogger/";
-            string baseName = "BehaviorLog"+suffix+".csv";
             using (ConfirmationForm confirmPopup = new ConfirmationForm(obsWHabitsList[Int32.Parse(observationType.Name)]))
             {
                 confirmPopup.Text = this.Text + "" + observationType.Text;
@@ -145,85 +146,52 @@ namespace Behaivoir_Logger
                             workHabitsList.Add(i+1);
                         }
                     }
-                    string path = basePath + defaultFolder;
-                    string backupPath = basePath + defaultFolder + "backup/";
-                    string filename = baseName;
-                    OpenAndWriteToCSV(path, backupPath, filename, comments, observationType, workHabitsList);
-                    path = basePath + userName + "/" + defaultFolder;
-                    filename = userName + baseName;
-                    OpenAndWriteToCSV(path, backupPath, filename, comments, observationType, workHabitsList);
+                   WriteToGoogleSheets(comments, observationType, workHabitsList);
+                   
                 }
             }
          
 
         }
-        private void OpenAndWriteToCSV(string path, string backupPath, string filename, string comments, Button observationType, List<int> workHabitsList)
+
+
+        //fixme make it write to Google Sheets
+        private void WriteToGoogleSheets(string comments, Button observationType, List<int> workHabitsList)
         {
-            string outfileName = path + filename;
-            string backOutFile = backupPath + filename;
-            Directory.CreateDirectory(path);
-            if (!File.Exists(outfileName))
-            {
-                using (StreamWriter sw = new StreamWriter(outfileName))
-                {
-                    sw.WriteLine("Time,Name,Observation Text,Comments,Attendance,Safety,Care of Work Area,Good Judgement,Effort,Cooperation,Self Discipline,Quality of Work,Quanity of Work,Dress");
-                }
-            }
-            try
-            {
-                if (File.Exists(backOutFile))
-                {
-                    //file is not in use otherwise throws exception
-                    using (StreamWriter sw = File.AppendText(outfileName)){}
-                    //move file over to local area
-                    File.Copy(backOutFile, outfileName,true);
-                    File.Delete(backOutFile);
-                }
-                using (StreamWriter sw = File.AppendText(outfileName))
-                {
-                    WriteToCSV(comments, observationType, workHabitsList,sw);
-                }
-            }
-            catch 
-            {
-                 //File is already open need to write to backup file
-                Directory.CreateDirectory(backupPath);
-                if (!File.Exists(backOutFile))
-                {
-                  File.Copy(outfileName,backOutFile);
-                }
-                using (StreamWriter sw = File.AppendText(backOutFile))
-                {
-                    WriteToCSV(comments,observationType,workHabitsList,sw);
-                }
-            }
-        }
-        private void WriteToCSV(string comments, Button observationType, List<int> workHabitsList, StreamWriter sw)
-        {
-            //write the information to csv file
+   
+            //write datetime,username,observer, obsLogTextList,comments,partPoints,countable,workhabit stuff
             string dateTime = DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss");
-            sw.Write(dateTime + "," + this.Text + "," + obsLogTextList[Int32.Parse(observationType.Name)].Replace(",", ";").Replace(System.Environment.NewLine, ".  ") + "," + comments.Replace(",", ";").Replace(System.Environment.NewLine, ".  ") + ",");
-            //write the information regarding workhabit categories to csv file
+            string defaultComment = obsLogTextList[Int32.Parse(observationType.Name)];
+        
+            List<object> writeData = new List<object>();
+            writeData.Add(dateTime);
+            writeData.Add(userName);
+            writeData.Add("David Baker");
+            writeData.Add(defaultComment);
+            writeData.Add(comments);
+            writeData.Add(obsPosNegList[Int32.Parse(observationType.Name)]);
+            writeData.Add(1);//countable
             int obsWHabitsIndex = 0;
             for (int i = 1; i <= 10; i++)
             {
                 //this compares to see if item in list in config file matches this list
                 if (workHabitsList[obsWHabitsIndex] == i)
                 {
-                    sw.Write(obsPosNegList[Int32.Parse(observationType.Name)]);
+
+                    writeData.Add(obsPosNegList[Int32.Parse(observationType.Name)]);
                     obsWHabitsIndex++;
                 }
 
                 if (obsWHabitsIndex >= workHabitsList.Count)
                 {
-                    sw.Write("\n");
                     break;
                 }
-                else
-                {
-                    sw.Write(",");
-                }
-            }      
+            }
+
+            string sheetName = Form1.studentDictionary[userName].getSheetName();
+            int rowNum = Utils.GetNextRowNum(Form1.spreadsheetId, sheetName, "A1", "B");
+            Utils.WriteData(Form1.spreadsheetId, writeData, sheetName, "A" + rowNum, "R" + rowNum);
+           
         }
     }
 }

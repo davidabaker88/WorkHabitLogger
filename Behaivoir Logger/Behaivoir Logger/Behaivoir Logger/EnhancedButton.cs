@@ -9,6 +9,7 @@ namespace Behaivoir_Logger
 {
     class EnhancedButton : Button
     {
+        public bool absent;
         public string userName
         {
             get;
@@ -17,10 +18,9 @@ namespace Behaivoir_Logger
         public EnhancedButton(string username)
         {
             userName = username;
+            absent = true;
+
         }
-        public EnhancedButton()
-        {
-            
-        }
+      
     }
 }

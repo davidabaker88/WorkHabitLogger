@@ -8,12 +8,14 @@ using Google.Apis.Sheets.v4.Data;
 
 namespace Behaivoir_Logger
 {
-    class Student
+    public class Student
     {
         private String userName;
         private String displayName;
         private String sheetID;
         private String courseName;
+        public int powerSchoolRow;
+        public int canvasRow;
 
         public Student(String UserName, String DisplayName,String CourseName,String mainSheetID)
         {
@@ -44,9 +46,10 @@ namespace Behaivoir_Logger
             //=importrange("sheetID","sheetName!A2:B3")
             var formula = "=importrange(\"" + mainSheetID + "\",\"" + getSheetName() + "!A1:I\")";
             Utils.WriteCellData(newSheetID, formula, tabName, "A1");
-
+            //formula = "=importrange(\"" + mainSheetID + "\",\"" + getSheetName() + "!A1:I\")";
+            //Utils.WriteCellData(newSheetID, formula, tabName, "D1");
             //lock cells in student sheet
-            Utils.AddLockCells(newSheetID, tabName, 0, 8, 10, 10);
+            //Utils.AddLockCells(newSheetID, tabName, 0, 8, 10, 10);
             //share student sheets
 
 

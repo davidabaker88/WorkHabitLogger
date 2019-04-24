@@ -341,7 +341,7 @@ namespace Behaivoir_Logger
             batchUpdateRequest.Execute();
         }
         /// <summary>
-        /// locks the cells for a sheet, 
+        /// locks the cells for a sheet, ---Doesnt actually work....
         /// </summary>
         /// <param name="SpreadSheetID"></param>
         /// <param name="SheetName"></param>
@@ -365,8 +365,8 @@ namespace Behaivoir_Logger
             addLockedCellRequest.ProtectedRange.Range.StartRowIndex = startRow;
             addLockedCellRequest.ProtectedRange.Editors = new Editors();
             addLockedCellRequest.ProtectedRange.Editors.Users = new List<string>();
-            addLockedCellRequest.ProtectedRange.Editors.Users.Add("davidabaker88@gmail.com");
-            addLockedCellRequest.ProtectedRange.Editors.DomainUsersCanEdit = false;
+            addLockedCellRequest.ProtectedRange.Editors.Users.Add("fake email");
+           
 
             BatchUpdateSpreadsheetRequest batchUpdateSpreadsheetRequest = new BatchUpdateSpreadsheetRequest();
             batchUpdateSpreadsheetRequest.Requests = new List<Request>();

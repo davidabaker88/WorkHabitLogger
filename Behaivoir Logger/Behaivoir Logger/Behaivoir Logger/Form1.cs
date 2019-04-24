@@ -16,45 +16,75 @@ namespace Behaivoir_Logger
         List<String> studentNameList = new List<String>();
         List<String> userNameList = new List<String>();
         List<EnhancedButton> buttonList = new List<EnhancedButton>();
-        Dictionary<String, Student> studentDictionary= new Dictionary<string, Student>();
+        public static Dictionary<String, Student> studentDictionary;
         private bool snapMode;
         private bool reportMode;
+        private bool attendanceMode;
         private bool amClassMode;
         private string amConfigSheet;
         private string pmConfigSheet;
+        private string amPowerSchoolSheet;
+        private string pmPowerSchoolSheet;
         private string courseName;
         private string suffix;
-        private String spreadsheetId; //fixme
+        public static String spreadsheetId; //fixme
+        const int powerSchoolStartRow = 10;
+        const int canvasStartRow = 4;
 
         public Form1()
         {
             InitializeComponent();
             //open manage book
-            
 
+            studentDictionary = new Dictionary<string, Student>();
             courseName = "Programming";//temp for now fixme
             suffix = "_18_19";//temp for now fixme
             spreadsheetId = "1qLpKVRoHulDbstC_BOE9X5X81iJY-uQoerFtBO6IhE8";//Utils.GetSheetIdByTitle(courseName + suffix);
             amConfigSheet = "StudentInfoAM";
             pmConfigSheet = "StudentInfoPM";
+            amPowerSchoolSheet = "PowerSchoolAM";
+            pmPowerSchoolSheet = "PowerSchoolPM";
             amClassMode = true;
             snapMode = false;
+            attendanceMode = false;
             reportMode = false;
             this.Text = courseName + " AM";
-            CreatingNewButtons(amConfigSheet);
+            CreatingNewButtons(amConfigSheet,amPowerSchoolSheet);
         }
    
 
-        private void CreatingNewButtons(string studentCfgFileName)
+        private void CreatingNewButtons(string studentCfgFileName,string powerSchoolSheet)
         {
             int userNameCol = 1;
             int displayNameCol = 0;
             int sheetIDCol = 2; //need to create function
             //read section from CfgSheet
-            IList<IList<Object>> studentConfigData =Utils.GetSpreadData(spreadsheetId, studentCfgFileName, "A1","C30");//fix range
+            IList<IList<Object>> studentConfigData =Utils.GetSpreadData(spreadsheetId, studentCfgFileName, "A1","C");//fix range
+            IList<IList<Object>> powerSchoolRowData = Utils.GetSpreadData(spreadsheetId, powerSchoolSheet, "E"+powerSchoolStartRow, "E");//fix range
+            IList<IList<Object>> canvasRowData = Utils.GetSpreadData(spreadsheetId, "CanvasGrades", "B"+canvasStartRow, "B");//fix range
             if (studentConfigData != null && studentConfigData.Count > 0)
             {
-                int rowNum = 0;//skip header row
+                int rowNum = powerSchoolStartRow;
+             /*   foreach (var row in powerSchoolRowData)
+                {
+                    try
+                    {
+                        studentDictionary[(string)row[0]].powerSchoolRow = rowNum; //add try catch to handle student not found.
+                    }
+                    catch (Exception ex) { }
+                    rowNum++;
+                }
+                rowNum = canvasStartRow;
+                foreach (var row in canvasRowData)
+                {
+                    try
+                    {
+                        studentDictionary[(string)row[0]].canvasRow = rowNum;
+                    }
+                    catch (Exception ex) { } //ignore and move on if not found
+                    rowNum++;
+                }*/
+                rowNum = 0;//skip header row
                 foreach (var row in studentConfigData)
                 {
                     rowNum++;
@@ -63,6 +93,7 @@ namespace Behaivoir_Logger
                     //create new student and add in information.  Add student to studentDictionary
                     if (row.Count ==2)
                     {
+                        userNameList.Add((string)row[userNameCol]);
                         studentDictionary.Add((string)row[userNameCol], new Student((string)row[userNameCol], (string)row[displayNameCol], courseName+suffix,spreadsheetId));
                         //write new sheet ID to cell
                         Utils.WriteCellData(spreadsheetId, studentDictionary[(string)row[userNameCol]].getSheetID(), studentCfgFileName, "C" + rowNum);
@@ -74,6 +105,8 @@ namespace Behaivoir_Logger
                     }
                     else if (row.Count ==3)
                     {
+                        userNameList.Add((string)row[userNameCol]);
+                        if (row[userNameCol].Equals("x")) { continue; }
                         studentDictionary.Add((string)row[userNameCol], new Student((string)row[userNameCol], (string)row[displayNameCol], courseName+suffix, (string)row[sheetIDCol],spreadsheetId));
                     }
                     else
@@ -82,14 +115,15 @@ namespace Behaivoir_Logger
                         //Console.ReadKey();
                     }
                 }
-            }
+     
+             }
             else
             {
                 Console.WriteLine("No data found.");
             }
             int horizotal = 30;
             int vertical = 70;
-            int rowSize = 7;
+            int rowSize = 5;
             int seatsLeftAisle = 8;
             int seatsRightAisle = 8;
             //System.Windows.SystemParameters.PrimaryScreenWidth 
@@ -102,15 +136,20 @@ namespace Behaivoir_Logger
             }
             buttonList.Clear();
 
+
             int i = 0;
-            foreach (String userName in studentDictionary.Keys)
+            foreach (String userName in userNameList)
             {
                 
-                EnhancedButton myButton = new EnhancedButton();
+                EnhancedButton myButton = new EnhancedButton(userName);
                 myButton.Size = new Size(85, 85);
                 myButton.Location = new Point(horizotal, vertical);
-                myButton.Text = studentDictionary[userName].getDisplayName();
-                myButton.userName = userName;
+                myButton.Text = "x";
+                if (!userName.Equals("x"))
+                {
+                    myButton.Text = studentDictionary[userName].getDisplayName();
+                }
+         
                 myButton.Click += new EventHandler(button_Click);
 
                 horizotal += 90;
@@ -136,40 +175,54 @@ namespace Behaivoir_Logger
 
         protected void button_Click (object sender, EventArgs e)
         {
+
             EnhancedButton studentBtn = sender as EnhancedButton;
-
-            if (!snapMode && !reportMode)
+            if (studentBtn.Text != "x")
             {
-                //open new form pass in student name
-               /* using (Observation observationPopup = new Observation(courseName, suffix))
+                if (!snapMode && !attendanceMode)
                 {
-                    observationPopup.Text = studentBtn.Text;
-                    observationPopup.userName = studentBtn.userName;
-                    if (observationPopup.ShowDialog() == DialogResult.OK)
+                    //open new form pass in student name
+                    using (Observation observationPopup = new Observation(courseName, suffix))
                     {
+                        observationPopup.Text = studentBtn.Text;
+                        observationPopup.userName = studentBtn.userName;
+                        if (observationPopup.ShowDialog() == DialogResult.OK)
+                        {
+                        }
+                    } //disable for now to prevent crash
+                }
+                else if (snapMode)
+                {
+                    if (studentBtn.BackColor == Color.Green)
+                    {
+                        studentBtn.BackColor = Color.Red;
                     }
-                }*/ //disable for now to prevent crash
-            }
-            else
-            {
-                if (studentBtn.BackColor == Color.Green)
-                {
-                    studentBtn.BackColor = Color.Red;
+                    else if (studentBtn.BackColor == Color.Red)
+                    {
+                        studentBtn.BackColor = Color.Yellow;
+                    }
+                    else if (studentBtn.BackColor == Color.Yellow)
+                    {
+                        studentBtn.BackColor = Color.Transparent;
+                    }
+                    else
+                    {
+                        studentBtn.BackColor = Color.Green;
+                    }
                 }
-                else if (studentBtn.BackColor == Color.Red)
+                else if (attendanceMode)
                 {
-                    studentBtn.BackColor = Color.Yellow;
-                }
-                else if (studentBtn.BackColor == Color.Yellow)
-                {
-                    studentBtn.BackColor = Color.Transparent;
-                }
-                else
-                {
-                    studentBtn.BackColor = Color.Green;
-                }
-            }
+                    if (studentBtn.BackColor == Color.Green)
+                    {
+                        studentBtn.BackColor = Color.Transparent;
+                    }
+                    else
+                    {
+                        studentBtn.BackColor = Color.Green;
+                    }
 
+                }
+            }
         }
 
         private void backBtn_Click(object sender, EventArgs e)
@@ -180,14 +233,16 @@ namespace Behaivoir_Logger
             {
                 this.Text = courseName+" AM";
                 studentDictionary.Clear();
-                CreatingNewButtons(amConfigSheet);
+                userNameList.Clear();
+                CreatingNewButtons(amConfigSheet,"");
                 backBtn.Text = "Switch to PM";
             }
             else
             {
                 this.Text = courseName + " PM";
                 studentDictionary.Clear();
-                CreatingNewButtons(pmConfigSheet);
+                userNameList.Clear();
+                CreatingNewButtons(pmConfigSheet,"");
                 backBtn.Text = "Switch to AM";
             }
         }
@@ -195,8 +250,9 @@ namespace Behaivoir_Logger
         private void snapshotBtn_Click(object sender, EventArgs e)
         {
             //swap between modes on click of button
-            snapMode = snapMode ^ true;
+            snapMode = !snapMode;
             reportMode = false;
+            attendanceMode = false;
             
             submitBtn.Visible = snapMode;
             if (snapMode)
@@ -210,11 +266,19 @@ namespace Behaivoir_Logger
            
             foreach (EnhancedButton tempBtn in buttonList)
             {
-                if (tempBtn.Text != "")
+                if (tempBtn.Text != "x")
                 {
                     if (snapMode)
                     {
-                        tempBtn.BackColor = Color.Green;
+                        if (tempBtn.absent)
+                        {
+                            tempBtn.BackColor = Color.Transparent;
+                        }
+                        else
+                        {
+                            tempBtn.BackColor = Color.Green;
+                        }
+                        
                     }
                     else
                     {
@@ -228,81 +292,81 @@ namespace Behaivoir_Logger
 
         private void submitBtn_Click(object sender, EventArgs e)
         {
-            //needs to write to google sheet.
-            snapMode = false;
-            submitBtn.Visible = false;
-
-            
-
-           
-            int posNeg;
-           
-            foreach (EnhancedButton tempBtn in buttonList)
+            if (snapMode)
             {
-                if (tempBtn.Text != "")
+                //needs to write to google sheet.
+                snapMode = false;
+                submitBtn.Visible = false;
+
+                int posNeg;
+
+                foreach (EnhancedButton tempBtn in buttonList)
                 {
-                    string comments = "";
-                    String[] wrkHabitsArray = { "4", "5", "7" };
-                    List<int> workHabitsList = new List<int>();
-                    if (tempBtn.BackColor == Color.Green)
+                    if (tempBtn.Text != "x")
                     {
-                        posNeg = 1;
-                        //write good
-                        foreach (string wrkHabit in wrkHabitsArray)
+                        string comments = "";
+                        String[] wrkHabitsArray = { "4", "5", "7" };
+                        List<int> workHabitsList = new List<int>();
+                        if (tempBtn.BackColor == Color.Green)
                         {
-                            workHabitsList.Add(Int32.Parse(wrkHabit));
-                        }
-                        WriteToCSV(tempBtn.userName, posNeg, comments, workHabitsList);
-                        //WriteData(String spreadSheetID, List<object> cellData, string SheetName, String startCell, String endCell)
-
-                    }
-                    else if (tempBtn.BackColor == Color.Red || tempBtn.BackColor == Color.Yellow)
-                    {
-                        posNeg = 0;
-                        //write bad
-                        if (tempBtn.BackColor == Color.Yellow)
-                        {
-                            using (ConfirmationForm confirmPopup = new ConfirmationForm(wrkHabitsArray))
-                            {
-                                confirmPopup.Text = this.Text + "" + tempBtn.userName;
-                                if (confirmPopup.ShowDialog() == DialogResult.OK)
-                                {
-                                    //Create a property in ConfirmationForm to return the input of user.
-                                    comments = confirmPopup.comments;
-                                    for (int i = 0; i < 10; i++)
-                                    {
-                                        if (confirmPopup.whButtonList[i].Checked)
-                                        {
-                                            workHabitsList.Add(i + 1);
-                                        }
-                                        string posNegTemp = confirmPopup.posNeg.Text;
-                                        if (posNegTemp == "+")
-                                        {
-                                            posNeg = 1;
-                                        }
-                                        else
-                                        {
-                                            posNeg = 0;
-                                        }
-
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
+                            posNeg = 1;
+                            //write good
                             foreach (string wrkHabit in wrkHabitsArray)
                             {
                                 workHabitsList.Add(Int32.Parse(wrkHabit));
                             }
+                            WriteToCSV(tempBtn.userName, posNeg, comments, workHabitsList);
+                            //WriteData(String spreadSheetID, List<object> cellData, string SheetName, String startCell, String endCell)
+
                         }
-                        WriteToCSV(tempBtn.userName, posNeg, comments, workHabitsList);
+                        else if (tempBtn.BackColor == Color.Red || tempBtn.BackColor == Color.Yellow)
+                        {
+                            posNeg = 0;
+                            //write bad
+                            if (tempBtn.BackColor == Color.Yellow)
+                            {
+                                using (ConfirmationForm confirmPopup = new ConfirmationForm(wrkHabitsArray))
+                                {
+                                    confirmPopup.Text = this.Text + "" + tempBtn.userName;
+                                    if (confirmPopup.ShowDialog() == DialogResult.OK)
+                                    {
+                                        //Create a property in ConfirmationForm to return the input of user.
+                                        comments = confirmPopup.comments;
+                                        for (int i = 0; i < 10; i++)
+                                        {
+                                            if (confirmPopup.whButtonList[i].Checked)
+                                            {
+                                                workHabitsList.Add(i + 1);
+                                            }
+                                            string posNegTemp = confirmPopup.posNeg.Text;
+                                            if (posNegTemp == "+")
+                                            {
+                                                posNeg = 1;
+                                            }
+                                            else
+                                            {
+                                                posNeg = 0;
+                                            }
+
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                foreach (string wrkHabit in wrkHabitsArray)
+                                {
+                                    workHabitsList.Add(Int32.Parse(wrkHabit));
+                                }
+                            }
+                            WriteToCSV(tempBtn.userName, posNeg, comments, workHabitsList);
+                        }
+
+                        tempBtn.BackColor = Color.Transparent;
                     }
-                  
-                    tempBtn.BackColor = Color.Transparent;
                 }
+                snapshotBtn.BackColor = Color.Transparent;
             }
-            snapshotBtn.BackColor = Color.Transparent;
         }
 
         private void WriteToCSV(string userName, int onTask, string comments, List<int> workHabitsList)
@@ -319,19 +383,17 @@ namespace Behaivoir_Logger
 
             //write date
             string dateTime = DateTime.Now.ToString("yyyy'-'MM'-'dd HH':'mm':'ss");
-            Utils.WriteCellData(spreadsheetId, dateTime, sheetName, "A" + rowNum);
-            //write student name for debug to make sure it works
-            Utils.WriteCellData(spreadsheetId, userName, sheetName, "B" + rowNum);
-            //write observer
-            Utils.WriteCellData(spreadsheetId, "David Baker", sheetName, "C"+rowNum); //fix me replace hardcode with text box
-            //write observation
-            Utils.WriteCellData(spreadsheetId, defaultComments[onTask], sheetName, "D"+rowNum);
-            //write comments
-            Utils.WriteCellData(spreadsheetId, comments, sheetName, "E" + rowNum);
-            //write 1 or zero (positive or negative)
-            Utils.WriteCellData(spreadsheetId, onTask, sheetName, "F" + rowNum);
-            //write a 1 for countable
-            Utils.WriteCellData(spreadsheetId, 1, sheetName, "G" + rowNum);
+            List<object> writeData = new List<object>();
+            writeData.Add(dateTime);
+            writeData.Add(userName);
+            writeData.Add("David Baker");
+            writeData.Add(defaultComments[onTask]);
+            writeData.Add(comments);
+            writeData.Add(onTask);
+            writeData.Add(1);
+
+            Utils.WriteData(spreadsheetId, writeData, sheetName, "A" + rowNum, "H" + rowNum);
+          
 
         }
 
@@ -373,7 +435,47 @@ namespace Behaivoir_Logger
             }
         }
 
-      
+        private void attendanceBtn_Click(object sender, EventArgs e)
+        {
 
+            attendanceMode = !attendanceMode;
+            snapMode = false;
+            reportMode = false;
+            submitBtn.Visible = attendanceMode;
+            if (attendanceMode)
+            {
+                attendanceBtn.BackColor = Color.Green;
+                foreach (EnhancedButton tempBtn in buttonList)
+                {
+                        if (tempBtn.absent)
+                        {
+                            tempBtn.BackColor = Color.Transparent;
+                        }
+                        else
+                        {
+                            tempBtn.BackColor = Color.Green;
+                        }
+                }
+            }
+            else
+            {
+                attendanceBtn.BackColor = Color.Transparent;
+                foreach (EnhancedButton tempBtn in buttonList)
+                {
+                        if (tempBtn.BackColor == Color.Transparent)
+                        {
+                            tempBtn.absent = true;
+                        }
+                        else
+                        {
+                            tempBtn.absent = false;
+                        }
+                    tempBtn.BackColor = Color.Transparent;
+                }
+            }
+
+           
+
+        }
     }
 }

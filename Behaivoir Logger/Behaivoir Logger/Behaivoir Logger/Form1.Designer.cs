@@ -38,13 +38,15 @@
             this.dateLabel2 = new System.Windows.Forms.Label();
             this.toLabel = new System.Windows.Forms.Label();
             this.toTextBox = new System.Windows.Forms.TextBox();
+            this.attendanceBtn = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // backBtn
             // 
-            this.backBtn.Location = new System.Drawing.Point(30, 13);
+            this.backBtn.Location = new System.Drawing.Point(60, 25);
+            this.backBtn.Margin = new System.Windows.Forms.Padding(6);
             this.backBtn.Name = "backBtn";
-            this.backBtn.Size = new System.Drawing.Size(84, 40);
+            this.backBtn.Size = new System.Drawing.Size(168, 77);
             this.backBtn.TabIndex = 0;
             this.backBtn.Text = "Switch To PM";
             this.backBtn.UseVisualStyleBackColor = true;
@@ -52,9 +54,10 @@
             // 
             // snapshotBtn
             // 
-            this.snapshotBtn.Location = new System.Drawing.Point(177, 13);
+            this.snapshotBtn.Location = new System.Drawing.Point(268, 26);
+            this.snapshotBtn.Margin = new System.Windows.Forms.Padding(6);
             this.snapshotBtn.Name = "snapshotBtn";
-            this.snapshotBtn.Size = new System.Drawing.Size(104, 40);
+            this.snapshotBtn.Size = new System.Drawing.Size(208, 77);
             this.snapshotBtn.TabIndex = 1;
             this.snapshotBtn.Text = "Snapshot";
             this.snapshotBtn.UseVisualStyleBackColor = true;
@@ -62,9 +65,10 @@
             // 
             // submitBtn
             // 
-            this.submitBtn.Location = new System.Drawing.Point(320, 13);
+            this.submitBtn.Location = new System.Drawing.Point(777, 25);
+            this.submitBtn.Margin = new System.Windows.Forms.Padding(6);
             this.submitBtn.Name = "submitBtn";
-            this.submitBtn.Size = new System.Drawing.Size(97, 40);
+            this.submitBtn.Size = new System.Drawing.Size(194, 77);
             this.submitBtn.TabIndex = 2;
             this.submitBtn.Text = "Submit";
             this.submitBtn.UseVisualStyleBackColor = true;
@@ -73,9 +77,10 @@
             // 
             // pullReportBtn
             // 
-            this.pullReportBtn.Location = new System.Drawing.Point(498, 13);
+            this.pullReportBtn.Location = new System.Drawing.Point(996, 25);
+            this.pullReportBtn.Margin = new System.Windows.Forms.Padding(6);
             this.pullReportBtn.Name = "pullReportBtn";
-            this.pullReportBtn.Size = new System.Drawing.Size(103, 40);
+            this.pullReportBtn.Size = new System.Drawing.Size(206, 77);
             this.pullReportBtn.TabIndex = 3;
             this.pullReportBtn.Text = "Pull Report";
             this.pullReportBtn.UseVisualStyleBackColor = true;
@@ -84,18 +89,20 @@
             // 
             // fromTextBox
             // 
-            this.fromTextBox.Location = new System.Drawing.Point(607, 43);
+            this.fromTextBox.Location = new System.Drawing.Point(1214, 83);
+            this.fromTextBox.Margin = new System.Windows.Forms.Padding(6);
             this.fromTextBox.Name = "fromTextBox";
-            this.fromTextBox.Size = new System.Drawing.Size(66, 20);
+            this.fromTextBox.Size = new System.Drawing.Size(128, 31);
             this.fromTextBox.TabIndex = 4;
             this.fromTextBox.Visible = false;
             // 
             // fromLabel
             // 
             this.fromLabel.AutoSize = true;
-            this.fromLabel.Location = new System.Drawing.Point(619, 9);
+            this.fromLabel.Location = new System.Drawing.Point(1238, 17);
+            this.fromLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.fromLabel.Name = "fromLabel";
-            this.fromLabel.Size = new System.Drawing.Size(33, 13);
+            this.fromLabel.Size = new System.Drawing.Size(67, 25);
             this.fromLabel.TabIndex = 5;
             this.fromLabel.Text = "From:";
             this.fromLabel.Visible = false;
@@ -103,9 +110,10 @@
             // dateLabel1
             // 
             this.dateLabel1.AutoSize = true;
-            this.dateLabel1.Location = new System.Drawing.Point(607, 27);
+            this.dateLabel1.Location = new System.Drawing.Point(1214, 52);
+            this.dateLabel1.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.dateLabel1.Name = "dateLabel1";
-            this.dateLabel1.Size = new System.Drawing.Size(55, 13);
+            this.dateLabel1.Size = new System.Drawing.Size(104, 25);
             this.dateLabel1.TabIndex = 6;
             this.dateLabel1.Text = "mm/dd/yy";
             this.dateLabel1.Visible = false;
@@ -113,9 +121,10 @@
             // dateLabel2
             // 
             this.dateLabel2.AutoSize = true;
-            this.dateLabel2.Location = new System.Drawing.Point(683, 27);
+            this.dateLabel2.Location = new System.Drawing.Point(1366, 52);
+            this.dateLabel2.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.dateLabel2.Name = "dateLabel2";
-            this.dateLabel2.Size = new System.Drawing.Size(55, 13);
+            this.dateLabel2.Size = new System.Drawing.Size(104, 25);
             this.dateLabel2.TabIndex = 9;
             this.dateLabel2.Text = "mm/dd/yy";
             this.dateLabel2.Visible = false;
@@ -123,26 +132,40 @@
             // toLabel
             // 
             this.toLabel.AutoSize = true;
-            this.toLabel.Location = new System.Drawing.Point(695, 9);
+            this.toLabel.Location = new System.Drawing.Point(1390, 17);
+            this.toLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.toLabel.Name = "toLabel";
-            this.toLabel.Size = new System.Drawing.Size(23, 13);
+            this.toLabel.Size = new System.Drawing.Size(43, 25);
             this.toLabel.TabIndex = 8;
             this.toLabel.Text = "To:";
             this.toLabel.Visible = false;
             // 
             // toTextBox
             // 
-            this.toTextBox.Location = new System.Drawing.Point(683, 43);
+            this.toTextBox.Location = new System.Drawing.Point(1366, 83);
+            this.toTextBox.Margin = new System.Windows.Forms.Padding(6);
             this.toTextBox.Name = "toTextBox";
-            this.toTextBox.Size = new System.Drawing.Size(66, 20);
+            this.toTextBox.Size = new System.Drawing.Size(128, 31);
             this.toTextBox.TabIndex = 7;
             this.toTextBox.Visible = false;
             // 
+            // attendanceBtn
+            // 
+            this.attendanceBtn.Location = new System.Drawing.Point(539, 26);
+            this.attendanceBtn.Name = "attendanceBtn";
+            this.attendanceBtn.Size = new System.Drawing.Size(176, 77);
+            this.attendanceBtn.TabIndex = 10;
+            this.attendanceBtn.Text = "Attendance";
+            this.attendanceBtn.UseVisualStyleBackColor = true;
+            this.attendanceBtn.Click += new System.EventHandler(this.attendanceBtn_Click);
+            // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(771, 489);
+            this.AutoSize = true;
+            this.ClientSize = new System.Drawing.Size(1519, 1298);
+            this.Controls.Add(this.attendanceBtn);
             this.Controls.Add(this.dateLabel2);
             this.Controls.Add(this.toLabel);
             this.Controls.Add(this.toTextBox);
@@ -153,6 +176,7 @@
             this.Controls.Add(this.submitBtn);
             this.Controls.Add(this.snapshotBtn);
             this.Controls.Add(this.backBtn);
+            this.Margin = new System.Windows.Forms.Padding(6);
             this.Name = "Form1";
             this.Text = "Form1";
             this.ResumeLayout(false);
@@ -172,7 +196,7 @@
         private System.Windows.Forms.Label dateLabel2;
         private System.Windows.Forms.Label toLabel;
         private System.Windows.Forms.TextBox toTextBox;
-
+        private System.Windows.Forms.Button attendanceBtn;
     }
 }
 
