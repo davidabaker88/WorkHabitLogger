@@ -170,7 +170,8 @@ namespace Behaivoir_Logger
             writeData.Add(defaultComment);
             writeData.Add(comments);
             writeData.Add(obsPosNegList[Int32.Parse(observationType.Name)]);
-            writeData.Add(1);//countable
+            int countable = Int32.Parse(obsPosNegList[Int32.Parse(observationType.Name)]) == -1 ? 0 : 1;
+            writeData.Add(countable);//countable
             int obsWHabitsIndex = 0;
             for (int i = 1; i <= 10; i++)
             {

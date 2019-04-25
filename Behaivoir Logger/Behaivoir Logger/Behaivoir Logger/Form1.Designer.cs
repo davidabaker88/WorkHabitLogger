@@ -61,6 +61,7 @@
             this.snapshotBtn.TabIndex = 1;
             this.snapshotBtn.Text = "Snapshot";
             this.snapshotBtn.UseVisualStyleBackColor = true;
+            this.snapshotBtn.Visible = false;
             this.snapshotBtn.Click += new System.EventHandler(this.snapshotBtn_Click);
             // 
             // submitBtn

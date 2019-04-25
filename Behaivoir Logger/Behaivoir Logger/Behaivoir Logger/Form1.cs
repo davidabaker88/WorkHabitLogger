@@ -292,81 +292,90 @@ namespace Behaivoir_Logger
 
         private void submitBtn_Click(object sender, EventArgs e)
         {
-            if (snapMode)
+
+            //needs to write to google sheet.
+            submitBtn.Visible = false;
+
+            int posNeg;
+
+            foreach (EnhancedButton tempBtn in buttonList)
             {
-                //needs to write to google sheet.
-                snapMode = false;
-                submitBtn.Visible = false;
-
-                int posNeg;
-
-                foreach (EnhancedButton tempBtn in buttonList)
+                if (tempBtn.Text != "x")
                 {
-                    if (tempBtn.Text != "x")
+                    string comments = "";
+                    String[] wrkHabitsArray = { "4", "5", "7" };
+                    List<int> workHabitsList = new List<int>();
+                    if (tempBtn.BackColor == Color.Green)
                     {
-                        string comments = "";
-                        String[] wrkHabitsArray = { "4", "5", "7" };
-                        List<int> workHabitsList = new List<int>();
-                        if (tempBtn.BackColor == Color.Green)
+                        posNeg = 0;
+                        //write good
+                        foreach (string wrkHabit in wrkHabitsArray)
                         {
-                            posNeg = 1;
-                            //write good
+                            workHabitsList.Add(Int32.Parse(wrkHabit));
+                        }
+                        if (snapMode)
+                        {
+                            WriteToCSV(tempBtn.userName, posNeg, comments, workHabitsList);
+                        }
+                        else if (attendanceMode)
+                        {
+                            WriteToSheetAttendance(tempBtn.userName);
+                            
+                        }
+                        //WriteData(String spreadSheetID, List<object> cellData, string SheetName, String startCell, String endCell)
+
+                    }
+                    else if (tempBtn.BackColor == Color.Red || tempBtn.BackColor == Color.Yellow)
+                    {
+                        posNeg = -1;
+                        //write bad
+                        if (tempBtn.BackColor == Color.Yellow)
+                        {
+                            using (ConfirmationForm confirmPopup = new ConfirmationForm(wrkHabitsArray))
+                            {
+                                confirmPopup.Text = this.Text + "" + tempBtn.userName;
+                                if (confirmPopup.ShowDialog() == DialogResult.OK)
+                                {
+                                    //Create a property in ConfirmationForm to return the input of user.
+                                    comments = confirmPopup.comments;
+                                    for (int i = 0; i < 10; i++)
+                                    {
+                                        if (confirmPopup.whButtonList[i].Checked)
+                                        {
+                                            workHabitsList.Add(i + 1);
+                                        }
+                                        string posNegTemp = confirmPopup.posNeg.Text;
+                                        if (posNegTemp == "+")
+                                        {
+                                            posNeg = 1;
+                                        }
+                                        else
+                                        {
+                                            posNeg = 0;
+                                        }
+
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
                             foreach (string wrkHabit in wrkHabitsArray)
                             {
                                 workHabitsList.Add(Int32.Parse(wrkHabit));
                             }
-                            WriteToCSV(tempBtn.userName, posNeg, comments, workHabitsList);
-                            //WriteData(String spreadSheetID, List<object> cellData, string SheetName, String startCell, String endCell)
-
                         }
-                        else if (tempBtn.BackColor == Color.Red || tempBtn.BackColor == Color.Yellow)
-                        {
-                            posNeg = 0;
-                            //write bad
-                            if (tempBtn.BackColor == Color.Yellow)
-                            {
-                                using (ConfirmationForm confirmPopup = new ConfirmationForm(wrkHabitsArray))
-                                {
-                                    confirmPopup.Text = this.Text + "" + tempBtn.userName;
-                                    if (confirmPopup.ShowDialog() == DialogResult.OK)
-                                    {
-                                        //Create a property in ConfirmationForm to return the input of user.
-                                        comments = confirmPopup.comments;
-                                        for (int i = 0; i < 10; i++)
-                                        {
-                                            if (confirmPopup.whButtonList[i].Checked)
-                                            {
-                                                workHabitsList.Add(i + 1);
-                                            }
-                                            string posNegTemp = confirmPopup.posNeg.Text;
-                                            if (posNegTemp == "+")
-                                            {
-                                                posNeg = 1;
-                                            }
-                                            else
-                                            {
-                                                posNeg = 0;
-                                            }
-
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                foreach (string wrkHabit in wrkHabitsArray)
-                                {
-                                    workHabitsList.Add(Int32.Parse(wrkHabit));
-                                }
-                            }
-                            WriteToCSV(tempBtn.userName, posNeg, comments, workHabitsList);
-                        }
-
-                        tempBtn.BackColor = Color.Transparent;
+                        WriteToCSV(tempBtn.userName, posNeg, comments, workHabitsList);
                     }
+
+                    tempBtn.BackColor = Color.Transparent;
                 }
-                snapshotBtn.BackColor = Color.Transparent;
             }
+            snapMode = false;
+            attendanceMode = false;
+            snapshotBtn.BackColor = Color.Transparent;
+            attendanceBtn.BackColor = Color.Transparent;
+
         }
 
         private void WriteToCSV(string userName, int onTask, string comments, List<int> workHabitsList)
@@ -390,10 +399,72 @@ namespace Behaivoir_Logger
             writeData.Add(defaultComments[onTask]);
             writeData.Add(comments);
             writeData.Add(onTask);
-            writeData.Add(1);
+            writeData.Add(0);
 
             Utils.WriteData(spreadsheetId, writeData, sheetName, "A" + rowNum, "H" + rowNum);
           
+
+        }
+
+        private void WriteToSheetAttendance(string userName)
+        {
+            //get last row written
+            Student test = studentDictionary[userName];
+            string sheetName = studentDictionary[userName].getSheetName();
+            int rowNum = Utils.GetNextRowNum(spreadsheetId, sheetName, "A1", "B");
+
+            string defaultComments;
+            defaultComments = "Daily WorkHabit and Participation Totals";
+            //write the information to sheet, set up cell data list(date,name,observation,comments,workhabits1-10,countableObservation
+
+            //write date
+            string dateTime = DateTime.Now.ToString("MM/dd/yyyy");
+            List<object> writeData = new List<object>();
+            writeData.Add(dateTime);
+            writeData.Add(userName);
+            writeData.Add("David Baker");
+            writeData.Add(defaultComments);
+            writeData.Add("");
+            int prevRow = rowNum - 1;
+            string formula = "=IF(SUM((filter(F2:F" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + ")))+5<0,0,5+SUM((filter(F2:F" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + "))))";
+            writeData.Add(formula);
+            //countable
+            formula = "=IF(SUM((filter(G2:G" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + ")))+5<0,0,5+SUM((filter(G2:G" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + "))))";
+            writeData.Add(formula);
+            //WH1
+            formula = "=IF(SUM((filter(H2:H" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + ")))+5<0,0,5+SUM((filter(H2:H" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + "))))";
+            writeData.Add(formula);
+            //WH2
+            formula = "=IF(SUM((filter(I2:I" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + ")))+5<0,0,5+SUM((filter(I2:I" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + "))))";
+            writeData.Add(formula);
+            //WH3
+            formula = "=IF(SUM((filter(J2:J" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + ")))+5<0,0,5+SUM((filter(J2:J" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + "))))";
+            writeData.Add(formula);
+            //WH4
+            formula = "=IF(SUM((filter(K2:K" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + ")))+5<0,0,5+SUM((filter(K2:K" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + "))))";
+            writeData.Add(formula);
+            //WH5
+            formula = "=IF(SUM((filter(L2:L" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + ")))+5<0,0,5+SUM((filter(L2:L" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + "))))";
+            writeData.Add(formula);
+            //WH6
+            formula = "=IF(SUM((filter(M2:M" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + ")))+5<0,0,5+SUM((filter(M2:M" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + "))))";
+            writeData.Add(formula);
+            //WH7
+            formula = "=IF(SUM((filter(N2:N" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + ")))+5<0,0,5+SUM((filter(N2:N" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + "))))";
+            writeData.Add(formula);
+            //WH8
+            formula = "=IF(SUM((filter(O2:O" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + ")))+5<0,0,5+SUM((filter(O2:O" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + "))))";
+            writeData.Add(formula);
+            //WH9
+            formula = "=IF(SUM((filter(P2:P" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + ")))+5<0,0,5+SUM((filter(P2:P" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + "))))";
+            writeData.Add(formula);
+            //WH10
+            formula = "=IF(SUM((filter(Q2:Q" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + ")))+5<0,0,5+SUM((filter(Q2:Q" + prevRow + ",$A2:$A" + prevRow + ">$A" + rowNum + "))))";
+            writeData.Add(formula);
+            
+      
+            Utils.WriteData(spreadsheetId, writeData, sheetName, "A" + rowNum, "R" + rowNum);
+
 
         }
 
